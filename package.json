@@ -1,0 +1,11 @@
+{
+    "name": "merkle-patricia-trie.mo",
+    "version": "0.0.1",
+    "description": "Merkle Patricia Trie",
+    "main": "",
+    "scripts": {
+        "test": "for i in test/*.spec.mo ; do $(vessel bin)/moc $(vessel sources) -r $i ; done"
+    },
+    "author": "f0i",
+    "license": "ISC"
+}
