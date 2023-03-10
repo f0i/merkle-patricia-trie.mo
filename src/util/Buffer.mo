@@ -7,21 +7,21 @@ import Hex "Hex";
 
 module {
 
-    public type Buffer = [var Nat8];
+    public type Buffer = [Nat8];
 
     // TODO: rename to init, alloc is from js
     public func alloc(size : Nat) : Buffer {
-        return Array.init<Nat8>(size, 0);
+        return Array.freeze(Array.init<Nat8>(size, 0));
     };
 
     public func fromText(text : Text) : Buffer {
         let encoded = Text.encodeUtf8(text);
-        return Blob.toArrayMut(encoded);
+        return Blob.toArray(encoded);
     };
 
     public func fromHex(hex : Text) : ?Buffer {
         switch (Hex.toArray(hex)) {
-            case (#ok(value)) { ?value };
+            case (#ok(value)) { ?Array.freeze(value) };
             case (#err(error)) { null };
         };
     };

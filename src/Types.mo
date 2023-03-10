@@ -13,7 +13,7 @@ module {
 
     type Nibbles = [Nat8];
 
-    type EmbeddedNode = { #Buffer; #BufferArr };
+    public type EmbeddedNode = { #Buffer; #BufferArr };
 
     type Proof = { #BufferArr };
 
@@ -31,7 +31,7 @@ module {
 
     type TrieOptsWithDefaults = {
         useKeyHashing : Bool;
-        useKeyHashingFunction : HashKeysFunction;
+        //useKeyHashingFunction : HashKeysFunction;
         useRootPersistence : Bool;
         useNodePruning : Bool;
     };

@@ -18,6 +18,7 @@ module {
         return Array.freeze<Nat8>(nibbles);
     };
 
+    /// Convert an array of nibbles into a array of bytes
     public func toArray(nibbles : [Nibble]) : [Nat8] {
         let size = nibbles.size() / 2;
         var arr = Array.init<Nat8>(size, 0);
@@ -27,6 +28,26 @@ module {
         return Array.freeze<Nat8>(arr);
     };
 
+    /// Split a byte into its nibbles
+    public func splitByte(b : Nat8) : (Nibble, Nibble) {
+        let high = b / 16;
+        let low = b % 16;
+        return (high, low);
+    };
+
+    /// Merge nibbles into a byte
+    /// Assumes that only lower 4 bits are used, larger values can lead to unintended byte values
+    public func mergeNibbles(high : Nibble, low : Nibble) : Nat8 {
+        return (high * 16) + low;
+    };
+
+    /// Merge nibbles into a byte
+    /// Only lower 4 bits are used, hihger bits are ignored
+    public func mergeNibblesSafe(high : Nibble, low : Nibble) : Nat8 {
+        return (high * 16) + (low % 16);
+    };
+
+    /// Compare two arrays of nibbles
     public func compare(a : [Nibble], b : [Nibble]) : Order.Order {
         let size = Nat.min(a.size(), b.size());
 
@@ -47,5 +68,22 @@ module {
         };
 
         return #equal;
+    };
+
+    public func matchingNibbleLength(a : [Nibble], b : [Nibble]) : Nat {
+        let size = Nat.min(a.size(), b.size());
+
+        for (i in Iter.range(0, size - 1)) {
+            if (a[i] != b[i]) return i;
+        };
+        return size;
+    };
+
+    public func doKeysMatch(a : [Nibble], b : [Nibble]) : Bool {
+        if (a.size() != b.size()) {
+            return false;
+        } else {
+            return matchingNibbleLength(a, b) == a.size();
+        };
     };
 };

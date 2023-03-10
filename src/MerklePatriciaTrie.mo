@@ -2,11 +2,15 @@ import Arr "ArrayExtra";
 import Array "mo:base/Array";
 import Buffer "util/Buffer";
 import Debug "mo:base/Debug";
+import List "mo:base/List";
+import Nibble "util/Nibble";
+import BranchNode "trie/node/BranchNode";
 
 module {
   public type MerklePatriciaTrie = Node;
   public type Trie = Node;
   type Buffer = Buffer.Buffer;
+  type Nibble = Nibble.Nibble;
 
   public type Node = {
     #nul;
@@ -15,7 +19,7 @@ module {
     #extension : (EncodedPath, Key);
   };
 
-  type Branch = (Node, Node, Node, Node, Node);
+  type Branch = BranchNode.BranchNode;
 
   type EncodedPath = {};
 
@@ -44,10 +48,31 @@ module {
   };
 
   public func findPath(trie : Trie, key : Buffer) : Path {
-    Debug.trap("implement");
+    Debug.print("implement findPath");
+    let stack = List.nil<Node>();
+    let targetKey = Nibble.fromArray(key);
+
+    func step(node : Node, nibbles : [Nibble]) {
+      switch (node) {
+        case (#nul) { return };
+        case (#leaf leaf) { return /*TODO*/ };
+        case (#branch branch) {
+          return;
+        };
+        case (#extension ext) {
+          return;
+        };
+      };
+    };
+
+    return {};
   };
 
-  public func allChildren(node : Node) : [Node] {
+  func lookupNode(trie : Trie, node : Buffer) {
+
+  };
+
+  func allChildren(node : Node) : [Node] {
     Debug.trap("implement");
   };
 };
