@@ -86,4 +86,32 @@ module {
             return matchingNibbleLength(a, b) == a.size();
         };
     };
+
+    public func replaceHigh(byte : Nat8, high : Nibble) : Nat8 {
+        return mergeNibblesSafe(high, byte);
+    };
+
+    public func compactEncode(nibbles : [Nibble], terminating : Bool) : [Nat8] {
+        let even = nibbles.size() % 2 == 0;
+        let size = nibbles.size() / 2 + 1;
+        var arr = Array.init<Nat8>(size, 0);
+
+        if (even) {
+            arr[0] := 0x00;
+            for (i in Iter.range(0, size - 2)) {
+                arr[i + 1] := (nibbles[i * 2] * 16) + nibbles[i * 2 +1];
+            };
+        } else {
+            arr[0] := 0x10 + nibbles[0];
+            for (i in Iter.range(0, size - 2)) {
+                arr[i + 1] := (nibbles[i * 2 + 1] * 16) + nibbles[i * 2 + 2];
+            };
+        };
+
+        if (terminating) {
+            arr[0] += 0x20;
+        };
+
+        return Array.freeze<Nat8>(arr);
+    };
 };

@@ -36,6 +36,4 @@ module {
         useNodePruning : Bool;
     };
 
-    let ROOT_DB_KEY : Buffer = [0x5f, 0x5f, 0x72, 0x6f, 0x6f, 0x74, 0x5f, 0x5f]; // return value of `Buffer.fromText("__root__")`
-
 };
