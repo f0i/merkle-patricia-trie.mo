@@ -10,6 +10,7 @@ import Debug "mo:base/Debug";
 
 module {
     type Trie = Trie.Trie;
+    type Path = Trie.Path;
     type Buffer = Buffer.Buffer;
     type Key = Key.Key;
 
@@ -40,24 +41,28 @@ module {
                         let trie = Trie.init();
                         let key = testKey();
                         let path = Trie.findPath(trie, key, null);
-                        let expected = {
+                        let expected : Path = {
                             node = #nul;
                             remaining = key;
                             stack = null;
+                            closest = ?#nul;
                         };
                         return path == expected;
                     },
                 ),
 
                 it(
-                    "get existing path",
+                    "get existing path with branch",
                     func({}) : Bool {
                         var trie = Trie.init();
-                        let key = testKey();
-                        trie := Trie.put(trie, key, {});
-                        let path = Trie.findPath(trie, key, null);
+                        let key1 = Key.fromKeyBytes([0x12, 0x34]);
+                        let key2 = Key.fromKeyBytes([0x22, 0x34]);
+                        trie := Trie.put(trie, key1, {});
+                        trie := Trie.put(trie, key2, {});
+
+                        let path = Trie.findPath(trie, key2, null);
                         let leaf : Trie.Node = #leaf {
-                            key = key;
+                            key = key2;
                             value = {};
                             hash = [];
                         };
@@ -65,6 +70,7 @@ module {
                             node = leaf;
                             remaining = [];
                             stack = ?(leaf, null);
+                            closest = null;
                         };
                         return path == expected;
                     },

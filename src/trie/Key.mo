@@ -7,9 +7,11 @@ import Nibble "../util/Nibble";
 import Nat8 "mo:base/Nat8";
 
 module {
-    public type Key = Buffer.Buffer;
     type Buffer = Buffer.Buffer;
     type Result<T, E> = Result.Result<T, E>;
+    type Nibble = Nibble.Nibble;
+
+    public type Key = [Nibble];
 
     /// Convert a buffer into a key by applying RPL and Keccak
     public func fromBuffer(buffer : Buffer) : Result<Key, Text> {
@@ -21,7 +23,11 @@ module {
 
         var sha = SHA3.Keccak(256);
         sha.update(rpl_encoded);
-        return #ok(sha.finalize());
+        return #ok(Nibble.fromArray(sha.finalize()));
+    };
+
+    public func fromKeyBytes(bytes : [Nat8]) : Key {
+        return Nibble.fromArray(bytes);
     };
 
     /// get the first nibble of the key and turn it into a Nat for using as index

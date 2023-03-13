@@ -118,24 +118,43 @@ module {
     };
   };
 
-  public func findPath(node : Node, key : Key, stack : List<Node>) : {
+  public type Path = {
     node : Node;
     stack : List<Node>;
     remaining : Key;
-  } {
-    let noMatch = { node = #nul; stack; remaining = key };
-
+    closest : ?Node;
+  };
+  /// Find the a path in a node and return the path to get there.
+  /// If no node was found at the given key, the part that exists will be
+  /// returned as `stack` and the rest of the key will be returned as `remaining`.
+  public func findPath(node : Node, key : Key, stack : List<Node>) : Path {
+    // no key, return node and include it in stack unless it's #nul
     if (key == [] and node != #nul) {
-      return { node; stack = ?(node, stack); remaining = [] };
+      return { node; stack = ?(node, stack); remaining = []; closest = ?node };
+    };
+
+    let noMatch = func(closest : Node) : Path {
+      {
+        node = #nul;
+        stack;
+        remaining = key;
+        closest = ?closest;
+      };
     };
 
     switch (node) {
-      case (#nul) { return noMatch };
+      case (#nul) { return noMatch(#nul) };
       case (#leaf leaf) {
         if (leaf.key == key) {
-          return { node = node; stack = ?(node, stack); remaining = [] };
+          // matchin leaf
+          return {
+            node = node;
+            stack = ?(node, stack);
+            remaining = [];
+            closest = null;
+          };
         };
-        return { node = #nul; stack; remaining = key };
+        return { node = #nul; stack; remaining = key; closest = ?node };
       };
       case (#branch branch) {
         let index = Key.toIndex(key);
@@ -144,16 +163,21 @@ module {
       };
       case (#extension ext) {
         if (key.size() < ext.key.size()) {
-          return noMatch;
+          return noMatch(node);
         };
 
         let same = Nibble.matchingNibbleLength(key, ext.key);
         if (same < ext.key.size()) {
-          return noMatch;
+          return noMatch(node);
         };
 
         if (same == key.size()) {
-          return { node; stack = ?(node, stack); remaining = [] };
+          return {
+            node;
+            stack = ?(node, stack);
+            remaining = [];
+            closest = null;
+          };
         };
         return findPath(ext.node, sliceKey(key, same), ?(node, stack));
       };
