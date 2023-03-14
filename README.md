@@ -7,6 +7,7 @@ Implementation of a Merkle Patricia Trie in Motoko.
 
 - Specification on [ethereum.org](https://ethereum.org/en/developers/docs/data-structures-and-encoding/patricia-merkle-trie/)
 - TypeScript implementation in [github.com/ethereumjs/.../trie](https://github.com/ethereumjs/ethereumjs-monorepo/tree/master/packages/trie)
+- Medium post with  [Ethereum Merkle Patricia Trie Explained](https://medium.com/@chiqing/merkle-patricia-trie-explained-ae3ac6a7e123)
 
 ## Testing
 
@@ -39,10 +40,11 @@ type Trie = Trie.Trie;
 type Buffer = Buffer.Buffer;
 type Key = Key.Key;
 
-func testKey() : Key {
-    switch (Key.fromBuffer([0])) {
-        case (#ok key) { key };
-        case (_) { Debug.trap("Failed to get key") };
-    };
-};
+var trie = Trie.init();
+let key1 = Key.fromKeyBytes([0x12, 0x34]);
+let key2 = Key.fromKeyBytes([0x22, 0x34]);
+trie := Trie.put(trie, key1, {});
+trie := Trie.put(trie, key2, {});
+
+Debug.print(Trie.toText(trie))
 ```
