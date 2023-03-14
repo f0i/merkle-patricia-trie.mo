@@ -8,6 +8,7 @@ import Nat8 "mo:base/Nat8";
 import Key "trie/Key";
 import Text "mo:base/Text";
 import Iter "mo:base/Iter";
+import Nat "mo:base/Nat";
 
 module {
   public type MerklePatriciaTrie = Node;
@@ -79,17 +80,20 @@ module {
     let { node; remaining; stack } = findPath(trie, key, null);
     let stuckOn = switch (stack) {
       case (null) {
-        Debug.print("Stuck on root");
+        //Debug.print("Stuck on root");
         trie;
       };
-      case (?((_, n), _)) {
+      case (?((k, n), _)) {
         switch (n) {
-          case (#branch branch) { branch.nodes[Key.toIndex(remaining)] };
+          case (#branch branch) {
+            //Debug.print("was in branch: " # nodeToText(n) # " with key " # Key.toText(k));
+            branch.nodes[Key.toIndex(k)];
+          };
           case (_) { n };
         };
       };
     };
-    Debug.print("stuckOn: " # nodeToText(stuckOn));
+    //Debug.print("stuckOn: " # nodeToText(stuckOn));
 
     // insert leaf
     var replacementNode : Node = switch (stuckOn) {
@@ -147,25 +151,26 @@ module {
         };
       };
     };
-    Debug.print("replacementNode: " # nodeToText(replacementNode));
+    //Debug.print("replacementNode: " # nodeToText(replacementNode));
 
     // insert replacement node and update nodes in path.stack
     var toUpdate = stack;
     while (true) {
       switch (toUpdate) {
-        case (null) { return replacementNode };
         case (?((key, #branch branch), tail)) {
-          Debug.trap("implement updateBranch");
           replacementNode := updateBranch(branch, key, replacementNode); // TODO: check key
           toUpdate := tail;
         };
         case (?((key, #extension ext), tail)) {
-          Debug.trap("implement updateExtension");
           replacementNode := updateExtension(ext, replacementNode);
           toUpdate := tail;
         };
         case (?((k, n), _)) {
           Debug.trap("in findPath: expected #branch or #extension but got " # nodeToText(n) # " at " # Key.toText(k));
+        };
+        case (null) {
+          //Debug.print("trie.put: " # nodeToText(replacementNode));
+          return replacementNode;
         };
       };
     };

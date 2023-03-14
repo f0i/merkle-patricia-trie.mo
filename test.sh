@@ -8,4 +8,4 @@ find test -name "*.spec.mo"
 #	$(vessel bin)/moc $(vessel sources) -r "$i"
 #done
 
-$(vessel bin)/moc $(vessel sources) -r "test/index.spec.mo"
+$(vessel bin)/moc $(vessel sources) -r "test/index.spec.mo" $*

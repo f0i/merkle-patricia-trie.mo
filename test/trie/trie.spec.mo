@@ -54,10 +54,12 @@ module {
                     "get existing path with branch",
                     func({}) : Bool {
                         var trie = Trie.init();
-                        let key1 = Key.fromKeyBytes([0x12, 0x34]);
-                        let key2 = Key.fromKeyBytes([0x22, 0x34]);
+                        let key1 = Key.fromKeyBytes([0x12, 0x31]);
+                        let key2 = Key.fromKeyBytes([0x22, 0x32]);
+                        let key3 = Key.fromKeyBytes([0x32, 0x33]);
                         trie := Trie.put(trie, key1, {});
                         trie := Trie.put(trie, key2, {});
+                        trie := Trie.put(trie, key3, {});
 
                         let path = Trie.findPath(trie, key2, null);
                         let expected : Trie.Node = #leaf {
@@ -65,6 +67,27 @@ module {
                             value = {};
                             hash = [];
                         };
+                        return (path.node == expected);
+                    },
+                ),
+
+                it(
+                    "extension -> branch -> 2 leafs",
+                    func({}) : Bool {
+                        var trie = Trie.init();
+                        let key1 = Key.fromKeyBytes([0x12, 0x31]);
+                        let key2 = Key.fromKeyBytes([0x12, 0x32]);
+                        trie := Trie.put(trie, key1, {});
+                        trie := Trie.put(trie, key2, {});
+
+                        let path = Trie.findPath(trie, key2, null);
+                        let expected : Trie.Node = #leaf {
+                            key = [];
+                            value = {};
+                            hash = [];
+                        };
+                        //Debug.print(Trie.nodeToText(trie));
+                        //Debug.print(Trie.pathToText(path));
                         return (path.node == expected);
                     },
                 ),

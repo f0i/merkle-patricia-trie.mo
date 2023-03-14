@@ -25,6 +25,26 @@ module {
                         };
                     },
                 ),
+
+                it(
+                    "slice",
+                    func({}) : Bool {
+
+                        let arr : [Nat8] = [0x10, 0x20, 0x30, 0x40];
+                        let key = Key.fromKeyBytes(arr);
+                        return Key.slice(key, 6) == [4, 0];
+                    },
+                ),
+
+                it(
+                    "take",
+                    func({}) : Bool {
+
+                        let arr : [Nat8] = [0x10, 0x20, 0x30, 0x40];
+                        let key = Key.fromKeyBytes(arr);
+                        return Key.take(key, 3) == [1, 0, 2];
+                    },
+                ),
             ],
         );
     };

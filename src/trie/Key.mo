@@ -48,7 +48,7 @@ module {
     public func take(key : Key, n : Nat) : Key {
         if (n == 0) return [];
         let size = key.size();
-        if (size >= n) return key;
+        if (n >= size) return key;
         Array.tabulate<Nibble>(n, func i = key[i]);
     };
 
