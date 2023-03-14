@@ -7,6 +7,7 @@ import Nibble "util/Nibble";
 import Nat8 "mo:base/Nat8";
 import Key "trie/Key";
 import Text "mo:base/Text";
+import Iter "mo:base/Iter";
 
 module {
   public type MerklePatriciaTrie = Node;
@@ -81,7 +82,7 @@ module {
         Debug.print("Stuck on root");
         trie;
       };
-      case (?(n, _)) {
+      case (?((_, n), _)) {
         switch (n) {
           case (#branch branch) { branch.nodes[Key.toIndex(remaining)] };
           case (_) { n };
@@ -153,18 +154,18 @@ module {
     while (true) {
       switch (toUpdate) {
         case (null) { return replacementNode };
-        case (?(#branch branch, tail)) {
+        case (?((key, #branch branch), tail)) {
           Debug.trap("implement updateBranch");
-          //replacementNode := updateBranch(#branch branch, index, replacementNode);
+          replacementNode := updateBranch(branch, key, replacementNode); // TODO: check key
           toUpdate := tail;
         };
-        case (?(#extension ext, tail)) {
+        case (?((key, #extension ext), tail)) {
           Debug.trap("implement updateExtension");
-          //updateExtension(#extension ext, replacementNode);
+          replacementNode := updateExtension(ext, replacementNode);
           toUpdate := tail;
         };
-        case (?(n, _)) {
-          Debug.trap("in findPath: expected #branch or #extension but got " # nodeToText(n));
+        case (?((k, n), _)) {
+          Debug.trap("in findPath: expected #branch or #extension but got " # nodeToText(n) # " at " # Key.toText(k));
         };
       };
     };
@@ -191,6 +192,24 @@ module {
     #branch {
       nodes = Array.freeze(nodes);
       value = ?value;
+      hash = [];
+    };
+  };
+
+  func updateBranch(branch : Branch, key : Key, node : Node) : Node {
+    var nodes = Array.thaw<Node>(branch.nodes);
+    nodes[Key.toIndex(key)] := node;
+    return #branch({
+      nodes = Array.freeze(nodes);
+      value = branch.value;
+      hash = [];
+    });
+  };
+
+  func updateExtension(ext : Extension, newNode : Node) : Node {
+    return #extension {
+      key = ext.key;
+      node = newNode;
       hash = [];
     };
   };
@@ -241,14 +260,14 @@ module {
     // The node for the given key or #nul if no node is set
     node : Node;
     // Branches and Extensions
-    stack : List<Node>;
+    stack : List<(Key, Node)>;
     // Part of the key not consumed by stack and node
     remaining : Key;
   };
   /// Find the a path in a node and return the path to get there.
   /// If no node was found at the given key, the part that exists will be
   /// returned as `stack` and the rest of the key will be returned as `remaining`.
-  public func findPath(node : Node, key : Key, stack : List<Node>) : Path {
+  public func findPath(node : Node, key : Key, stack : List<(Key, Node)>) : Path {
     // no key, return node and include it in stack unless it's #nul
     if (key == [] and node != #nul) {
       return { node; stack; remaining = [] };
@@ -275,7 +294,7 @@ module {
       };
       case (#branch branch) {
         let index = Key.toIndex(key);
-        let path = findPath(branch.nodes[index], Key.slice(key, 1), ?(node, stack));
+        let path = findPath(branch.nodes[index], Key.slice(key, 1), ?((key, node), stack));
         return path;
       };
       case (#extension ext) {
@@ -291,12 +310,12 @@ module {
         if (same == key.size()) {
           return {
             node = ext.node;
-            stack = ?(node, stack);
+            stack = ?((key, node), stack);
             remaining = [];
           };
         };
         // extention is part of key
-        return findPath(ext.node, Key.slice(key, same), ?(node, stack));
+        return findPath(ext.node, Key.slice(key, same), ?((key, node), stack));
       };
     };
   };
@@ -310,7 +329,14 @@ module {
       case (#nul) { "<>" };
       case (#branch(branch)) {
         let branches = Array.map(branch.nodes, nodeToText);
-        "branch(" # Text.join(",", branches.vals()) # ")";
+        switch (branch.value) {
+          case (null) {
+            "branch(" # Text.join(",", branches.vals()) # ")";
+          };
+          case (?value) {
+            "branch(" # Text.join(",", branches.vals()) # " ; " # valueToText(value) # ")";
+          };
+        };
       };
       case (#leaf(leaf)) { "leaf(" # Key.toText(leaf.key) # ")" };
       case (#extension(ext)) {
@@ -320,12 +346,18 @@ module {
   };
 
   public func pathToText(path : Path) : Text {
-    let nodes = List.toArray<Node>(path.stack);
-    let nodesText = Array.map(nodes, nodeToText);
+    let nodeIter = List.toIter<(Key, Node)>(path.stack);
+    func toText((k : Key, n : Node)) : Text = nodeToText(n);
+    let nodes = Iter.map<(Key, Node), Text>(nodeIter, toText);
+    let nodesText = Iter.toArray(nodes);
     "Path(\n" # //
     "  node: " # nodeToText(path.node) # "\n" # //
     "  stack: [\n    " # Text.join(",\n    ", nodesText.vals()) # "\n  ]" # //
     "  remaining: " # Key.toText(path.remaining) # "\n" # //
     ")";
+  };
+
+  public func valueToText(value : Value) : Text {
+    "{}";
   };
 };
