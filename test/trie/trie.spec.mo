@@ -45,7 +45,6 @@ module {
                             node = #nul;
                             remaining = key;
                             stack = null;
-                            closest = ?#nul;
                         };
                         return path == expected;
                     },
@@ -61,18 +60,12 @@ module {
                         trie := Trie.put(trie, key2, {});
 
                         let path = Trie.findPath(trie, key2, null);
-                        let leaf : Trie.Node = #leaf {
-                            key = key2;
+                        let expected : Trie.Node = #leaf {
+                            key = Key.slice(key2, 1);
                             value = {};
                             hash = [];
                         };
-                        let expected = {
-                            node = leaf;
-                            remaining = [];
-                            stack = ?(leaf, null);
-                            closest = null;
-                        };
-                        return path == expected;
+                        return (path.node == expected);
                     },
                 ),
             ],
