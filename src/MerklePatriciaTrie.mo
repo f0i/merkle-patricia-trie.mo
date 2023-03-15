@@ -97,7 +97,7 @@ module {
         };
       };
     };
-    print("stuckOn: " # nodeToText(stuckOn));
+    print("stuckOn: " # nodeToText(stuckOn) # " remaining: " # Key.toText(remaining));
 
     // insert leaf
     var replacementNode : Node = switch (stuckOn) {
@@ -107,7 +107,12 @@ module {
         let matching = Key.matchingLength(leaf.key, remaining);
 
         // replace leaf with one of the following
-        if (leaf.key == remaining) {
+        if (leaf.key == []) {
+          // branch(leaf.value)->new
+          let newLeaf = createLeaf(Key.slice(remaining, 1), value);
+          createBranchWithValue(remaining, newLeaf, leaf.value);
+        } else if (leaf.key == remaining) {
+          // replace existing
           createLeaf(remaining, value);
         } else if (matching == 0) {
           // branch->leaf/new
@@ -136,7 +141,11 @@ module {
         let matching = Key.matchingLength(ext.key, remaining);
 
         // replace extension with one of the following
-        if (matching == 0) {
+        if (remaining == []) {
+          // branch(value)->ext
+          let oldExt = createExtension(Key.slice(ext.key, 1), ext.node);
+          createBranchWithValue(ext.key, oldExt, value);
+        } else if (matching == 0) {
           // branch->ext/new
           let oldExt = createExtension(Key.slice(ext.key, 1), ext.node);
           let newLeaf = createLeaf(Key.slice(remaining, 1), value);
@@ -345,7 +354,7 @@ module {
             "branch(" # Text.join(",", branches.vals()) # ")";
           };
           case (?value) {
-            "branch(" # Text.join(",", branches.vals()) # " ; " # valueToText(value) # ")";
+            "branchV(" # Text.join(",", branches.vals()) # " ; " # valueToText(value) # ")";
           };
         };
       };

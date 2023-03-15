@@ -116,6 +116,16 @@ module {
                             trie2 := Trie.put(trie2, key, value);
                         };
 
+                        // check if all key are set
+                        for ((key, value) in keyValuePairs.vals()) {
+                            if (Trie.get(trie1, key) == null) {
+                                Debug.print("in trie: " # Trie.nodeToText(trie2));
+                                Debug.print("in trie: " # Trie.nodeToText(trie1));
+                                Debug.print("key not found: " # Key.toText(key));
+                                return false;
+                            };
+                        };
+
                         return (trie1 == trie2);
                     },
                 ),
