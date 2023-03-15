@@ -17,6 +17,10 @@ module {
   type Nibble = Nibble.Nibble;
   type List<T> = List.List<T>;
 
+  func print(msg : Text) {
+    //Debug.print(msg);
+  };
+
   public type Node = {
     #nul;
     #branch : Branch;
@@ -47,11 +51,11 @@ module {
   public type Hash = Buffer;
 
   //TODO: implement
-  type Value = {};
+  public type Value = {};
 
   /// Key describing a path in the trie
   /// In the case of ethereum this is keccak256(rlp(value))
-  type Key = [Nibble];
+  public type Key = [Nibble];
 
   /// Key with prefix nibble indicating type and path length:
   /// prefix 0x00 estension, even
@@ -80,30 +84,32 @@ module {
     let { node; remaining; stack } = findPath(trie, key, null);
     let stuckOn = switch (stack) {
       case (null) {
-        //Debug.print("Stuck on root");
+        print("Stuck on root");
         trie;
       };
       case (?((k, n), _)) {
         switch (n) {
           case (#branch branch) {
-            //Debug.print("was in branch: " # nodeToText(n) # " with key " # Key.toText(k));
+            print("was in branch: " # nodeToText(n) # " with key " # Key.toText(k));
             branch.nodes[Key.toIndex(k)];
           };
           case (_) { n };
         };
       };
     };
-    //Debug.print("stuckOn: " # nodeToText(stuckOn));
+    print("stuckOn: " # nodeToText(stuckOn));
 
     // insert leaf
     var replacementNode : Node = switch (stuckOn) {
-      case (#nul) { #leaf({ key = remaining; value = {}; hash = [] }) };
+      case (#nul) { createLeaf(remaining, value) };
       case (#branch _) { Debug.trap("Can't get stuck on a branch") };
       case (#leaf leaf) {
         let matching = Key.matchingLength(leaf.key, remaining);
 
         // replace leaf with one of the following
-        if (matching == 0) {
+        if (leaf.key == remaining) {
+          createLeaf(remaining, value);
+        } else if (matching == 0) {
           // branch->leaf/new
           let newLeaf = createLeaf(Key.slice(remaining, 1), value);
           let oldLeaf = createLeaf(Key.slice(leaf.key, 1), leaf.value);
@@ -116,7 +122,7 @@ module {
         } else if (matching == remaining.size()) {
           // extension->branch(new.value)->leaf
           let oldLeaf = createLeaf(Key.slice(leaf.key, matching + 1), leaf.value);
-          let newBranch = createBranchWithValue(Key.slice(remaining, matching), oldLeaf, value);
+          let newBranch = createBranchWithValue(Key.slice(leaf.key, matching), oldLeaf, value);
           createExtension(remaining, newBranch);
         } else {
           // extension->branch->leaf/new
@@ -151,7 +157,7 @@ module {
         };
       };
     };
-    //Debug.print("replacementNode: " # nodeToText(replacementNode));
+    print("replacementNode: " # nodeToText(replacementNode));
 
     // insert replacement node and update nodes in path.stack
     var toUpdate = stack;
@@ -169,7 +175,7 @@ module {
           Debug.trap("in findPath: expected #branch or #extension but got " # nodeToText(n) # " at " # Key.toText(k));
         };
         case (null) {
-          //Debug.print("trie.put: " # nodeToText(replacementNode));
+          print("trie.put: " # nodeToText(replacementNode));
           return replacementNode;
         };
       };

@@ -7,12 +7,15 @@ import Buffer "../../src/util/Buffer";
 import Trie "../../src/MerklePatriciaTrie";
 import Key "../../src/trie/Key";
 import Debug "mo:base/Debug";
+import Nibble "../../src/util/Nibble";
+import Array "mo:base/Array";
 
 module {
     type Trie = Trie.Trie;
     type Path = Trie.Path;
     type Buffer = Buffer.Buffer;
     type Key = Key.Key;
+    type Nibble = Nibble.Nibble;
 
     func testKey() : Key {
         switch (Key.fromBuffer([0])) {
@@ -72,13 +75,15 @@ module {
                 ),
 
                 it(
-                    "extension -> branch -> 2 leafs",
+                    "extension -> branch -> 3 leafs",
                     func({}) : Bool {
                         var trie = Trie.init();
                         let key1 = Key.fromKeyBytes([0x12, 0x31]);
                         let key2 = Key.fromKeyBytes([0x12, 0x32]);
+                        let key3 = Key.fromKeyBytes([0x12, 0x33, 0x45]);
                         trie := Trie.put(trie, key1, {});
                         trie := Trie.put(trie, key2, {});
+                        trie := Trie.put(trie, key3, {});
 
                         let path = Trie.findPath(trie, key2, null);
                         let expected : Trie.Node = #leaf {
@@ -89,6 +94,29 @@ module {
                         //Debug.print(Trie.nodeToText(trie));
                         //Debug.print(Trie.pathToText(path));
                         return (path.node == expected);
+                    },
+                ),
+
+                it(
+                    "Different order should produce the same trie",
+                    func({}) : Bool {
+                        var keyValuePairs : [(Key, Trie.Value)] = [
+                            ([1 : Nibble, 2, 3, 4, 5, 6], {}),
+                            ([1 : Nibble, 2, 3, 4, 5], {}),
+                            ([1 : Nibble, 2, 3, 4], {}),
+                            ([1 : Nibble, 2, 3], {}),
+                        ];
+                        var trie1 = Trie.init();
+                        for ((key, value) in keyValuePairs.vals()) {
+                            trie1 := Trie.put(trie1, key, value);
+                        };
+
+                        var trie2 = Trie.init();
+                        for ((key, value) in Array.reverse(keyValuePairs).vals()) {
+                            trie2 := Trie.put(trie2, key, value);
+                        };
+
+                        return (trie1 == trie2);
                     },
                 ),
             ],
