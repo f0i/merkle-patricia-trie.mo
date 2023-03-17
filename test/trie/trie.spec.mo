@@ -103,8 +103,8 @@ module {
                         var keyValuePairs : [(Key, Trie.Value)] = [
                             ([1 : Nibble, 2, 3, 4, 5, 6], {}),
                             ([1 : Nibble, 2, 3, 4, 5], {}),
-                            ([1 : Nibble, 2, 3, 4], {}),
                             ([1 : Nibble, 2, 3], {}),
+                            ([1 : Nibble, 2, 3, 4], {}),
                         ];
                         var trie1 = Trie.init();
                         for ((key, value) in keyValuePairs.vals()) {
@@ -129,6 +129,37 @@ module {
                         return (trie1 == trie2);
                     },
                 ),
+
+                it(
+                    "Resinsert shouldn't change the trie",
+                    func({}) : Bool {
+                        var keyValuePairs : [(Key, Trie.Value)] = [
+                            ([1 : Nibble, 2, 3, 4, 5, 6], {}),
+                            ([1 : Nibble, 2, 3, 4, 5], {}),
+                            ([1 : Nibble, 2, 3], {}),
+                            ([1 : Nibble, 2, 3, 4], {}),
+                        ];
+                        var trie1 = Trie.init();
+                        for ((key, value) in keyValuePairs.vals()) {
+                            trie1 := Trie.put(trie1, key, value);
+                        };
+
+                        var trie2 = Trie.init();
+
+                        // check if all key are set
+                        for ((key, value) in keyValuePairs.vals()) {
+                            trie2 := Trie.put(trie1, key, value);
+                            if (trie1 != trie2) {
+                                Debug.print("the trie: " # Trie.nodeToText(trie1));
+                                Debug.print(" != trie: " # Trie.nodeToText(trie2));
+                                return false;
+                            };
+                        };
+
+                        return (trie1 == trie2);
+                    },
+                ),
+
             ],
         );
     };

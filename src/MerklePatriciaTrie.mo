@@ -18,7 +18,7 @@ module {
   type List<T> = List.List<T>;
 
   func print(msg : Text) {
-    //Debug.print(msg);
+    // Debug.print(msg);
   };
 
   public type Node = {
@@ -70,6 +70,7 @@ module {
   };
 
   public func put(trie : Trie, key : Key, value : Value) : Trie {
+    print("put(" # Key.toText(key) # " in " # nodeToText(trie) # ")");
     if (trie == #nul) {
       // Insert initial value
       let newNode : Node = #leaf({
@@ -81,13 +82,17 @@ module {
     };
 
     // Find closest node
-    let { node; remaining; stack } = findPath(trie, key, null);
-    let stuckOn = switch (stack) {
-      case (null) {
+    let path = findPath(trie, key, null);
+    let { node; remaining; stack } = path;
+
+    let stuckOn = switch (node, stack) {
+      case (_, null) {
         print("Stuck on root");
         trie;
       };
-      case (?((k, n), _)) {
+      case (#leaf _, _) { node }; // update existing leaf
+      case (#branch _, _) { node }; // update existing branch value
+      case (_, ?((k, n), _)) {
         switch (n) {
           case (#branch branch) {
             print("was in branch: " # nodeToText(n) # " with key " # Key.toText(k));
@@ -97,23 +102,28 @@ module {
         };
       };
     };
-    print("stuckOn: " # nodeToText(stuckOn) # " remaining: " # Key.toText(remaining));
+    print("stuckOn: " # nodeToText(stuckOn) # " remaining: " # Key.toText(remaining) # " with " # pathToText(path));
 
     // insert leaf
     var replacementNode : Node = switch (stuckOn) {
       case (#nul) { createLeaf(remaining, value) };
-      case (#branch _) { Debug.trap("Can't get stuck on a branch") };
+      case (#branch branch) {
+        // replace existing
+        if (remaining != []) Debug.trap("Can't get stuck on a branch with non empty key: " # Key.toText(remaining));
+        Debug.print("update branch value");
+        updateBranchValue(branch, ?value);
+      };
       case (#leaf leaf) {
         let matching = Key.matchingLength(leaf.key, remaining);
 
         // replace leaf with one of the following
-        if (leaf.key == []) {
+        if (leaf.key == remaining) {
+          // replace existing
+          createLeaf(remaining, value);
+        } else if (leaf.key == []) {
           // branch(leaf.value)->new
           let newLeaf = createLeaf(Key.slice(remaining, 1), value);
           createBranchWithValue(remaining, newLeaf, leaf.value);
-        } else if (leaf.key == remaining) {
-          // replace existing
-          createLeaf(remaining, value);
         } else if (matching == 0) {
           // branch->leaf/new
           let newLeaf = createLeaf(Key.slice(remaining, 1), value);
@@ -140,7 +150,6 @@ module {
       case (#extension ext) {
         let matching = Key.matchingLength(ext.key, remaining);
 
-        // replace extension with one of the following
         if (remaining == []) {
           // branch(value)->ext
           let oldExt = createExtension(Key.slice(ext.key, 1), ext.node);
@@ -170,6 +179,7 @@ module {
 
     // insert replacement node and update nodes in path.stack
     var toUpdate = stack;
+
     while (true) {
       switch (toUpdate) {
         case (?((key, #branch branch), tail)) {
@@ -222,6 +232,14 @@ module {
     return #branch({
       nodes = Array.freeze(nodes);
       value = branch.value;
+      hash = [];
+    });
+  };
+
+  func updateBranchValue(branch : Branch, value : ?Value) : Node {
+    return #branch({
+      nodes = branch.nodes;
+      value = value;
       hash = [];
     });
   };
@@ -367,7 +385,7 @@ module {
 
   public func pathToText(path : Path) : Text {
     let nodeIter = List.toIter<(Key, Node)>(path.stack);
-    func toText((k : Key, n : Node)) : Text = nodeToText(n);
+    func toText((k : Key, n : Node)) : Text = Key.toText(k) # ": " # nodeToText(n);
     let nodes = Iter.map<(Key, Node), Text>(nodeIter, toText);
     let nodesText = Iter.toArray(nodes);
     "Path(\n" # //
