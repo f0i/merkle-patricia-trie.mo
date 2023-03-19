@@ -175,6 +175,15 @@ module {
         do {
             name "#nul";
             assert (Trie.hashHex(#nul)) == "56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421";
+
+            name "#leaf";
+            let leaf : Trie.Leaf = {
+                key = [7, 4, 6, 5, 7, 3, 7, 4];
+                value = Value.fromText("one");
+                hash = [];
+            };
+            Debug.print(Trie.hashHex(#leaf leaf));
+            assert (Trie.hashHex(#leaf leaf)) == "2b77e8547bc55e2a95227c939f9f9d67952de1e970a017e0910be510b090aff3";
         };
 
         section "Hashes";

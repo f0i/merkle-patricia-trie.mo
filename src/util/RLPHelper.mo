@@ -1,5 +1,5 @@
 import Buffer "mo:base/Buffer";
-import RLP "mo:rlp";
+import RLP "mo:rlp/rlp/encode";
 import RLPType "mo:rlp/types";
 import Result "mo:base/Result";
 import Iter "mo:base/Iter";
@@ -14,39 +14,36 @@ module {
     type InternalResult = Result.Result<Buffer, Text>;
     type EncodeResult = Result.Result<[Nat8], Text>;
 
-    public func encodeArray(array : [Nat8]) : [Nat8] {
+    public func encode(array : [Nat8]) : [Nat8] {
         let buffer = Buffer.fromArray<Nat8>(array);
         let rlpResult = RLP.encode(#Uint8Array buffer);
         let rlpBuffer = Util.unwrap(rlpResult);
         return Buffer.toArray<Nat8>(rlpBuffer);
     };
 
-    public func encodeArrays(arrays : [[Nat8]]) : [Nat8] {
-        let buffer = Buffer.Buffer<RLPType.Input>(arrays.size());
-        for (i in Iter.range(0, arrays.size() - 1)) {
-            let array = arrays[i];
-            buffer.add(#Uint8Array(Buffer.fromArray<Nat8>(arrays[i])));
-        };
-
-        let rplResult = RLP.encode(#List buffer);
-        let rlpBuffer = Util.unwrap(rplResult);
-        return Buffer.toArray(rlpBuffer);
-    };
-
     public func encodeEach(arrays : [[Nat8]]) : [[Nat8]] {
-        Array.map<[Nat8], [Nat8]>(arrays, encodeArray);
+        Array.map<[Nat8], [Nat8]>(arrays, encode);
     };
 
     public func encodeOuter(arrays : [[Nat8]]) : [Nat8] {
-        let output = encodeLength(arrays.size(), 192);
+        if (arrays == []) {
+            return [0x80];
+        };
+        let len = Array.foldLeft<[Nat8], Nat>(arrays, 0, func(sum, a) = sum + a.size());
+        let lengthPrefix = RLP.encodeLength(len, 192);
+        let output = Util.unwrap(lengthPrefix);
         for (val in arrays.vals()) {
             output.append(Buffer.fromArray(val));
         };
         return Buffer.toArray(output);
     };
 
+    /*
+
+    let OFFSET_LIST_SIZE = 0xc0;
+
     private func encodeLength(len : Nat, offset : Nat) : Buffer {
-        if (len < 56) {
+        if (len <= 55) {
             return Buffer.fromArray([Nat8.fromNat(len) + Nat8.fromNat(offset)]);
         };
 
@@ -73,5 +70,5 @@ module {
         Buffer.reverse(buffer);
         return buffer;
     };
-
+*/
 };

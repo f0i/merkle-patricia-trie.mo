@@ -307,6 +307,7 @@ module {
   // Function `H(x)` where `x` is `RLP(node)` and `H(x) = keccak256(x) if len(x) >= 32 else x`
   func nodeHash(node : Node) : Hash {
     let serial = nodeSerialize(node);
+    Debug.print("serialized: " # Hex.toText(serial));
     return hashIfLong(serial);
   };
 
@@ -322,18 +323,19 @@ module {
           };
         };
         raw[16] := Option.get(branch.value, []);
-        Array.freeze(raw);
+        RLP.encodeEach(Array.freeze(raw));
       };
       case (#leaf(leaf)) {
-        [Key.compactEncode(leaf.key, true), leaf.value];
+        RLP.encodeEach([Key.compactEncode(leaf.key, true), leaf.value]);
       };
       case (#extension(ext)) {
-        [Key.compactEncode(ext.key, false), nodeHash(ext.node)];
+        RLP.encodeEach([Key.compactEncode(ext.key, false), nodeHash(ext.node)]);
       };
     };
   };
 
   func nodeSerialize(node : Node) : Buffer {
+    Debug.print("nodeSerialize: " # Hex.toText2D(nodeRaw(node)));
     RLP.encodeOuter(nodeRaw(node));
   };
 
