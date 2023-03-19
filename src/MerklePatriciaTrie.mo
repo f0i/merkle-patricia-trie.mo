@@ -9,6 +9,11 @@ import Key "trie/Key";
 import Text "mo:base/Text";
 import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
+import Result "mo:base/Result";
+import RLP "util/RLPHelper";
+import Keccak "util/Keccak";
+import Option "mo:base/Option";
+import Hex "util/Hex";
 
 module {
   public type MerklePatriciaTrie = Node;
@@ -18,7 +23,7 @@ module {
   type List<T> = List.List<T>;
 
   func print(msg : Text) {
-    // Debug.print(msg);
+    Debug.print(msg);
   };
 
   public type Node = {
@@ -51,7 +56,7 @@ module {
   public type Hash = Buffer;
 
   //TODO: implement
-  public type Value = {};
+  public type Value = Buffer;
 
   /// Key describing a path in the trie
   /// In the case of ethereum this is keccak256(rlp(value))
@@ -69,13 +74,17 @@ module {
     #nul;
   };
 
+  public func delete(trie : Trie, key : Key) : Trie {
+    return put(trie, key, []); //TODO: implement
+  };
+
   public func put(trie : Trie, key : Key, value : Value) : Trie {
     print("put(" # Key.toText(key) # " in " # nodeToText(trie) # ")");
     if (trie == #nul) {
       // Insert initial value
       let newNode : Node = #leaf({
         key;
-        value = {};
+        value;
         hash = [];
       });
       return newNode;
@@ -84,14 +93,15 @@ module {
     // Find closest node
     let path = findPath(trie, key, null);
     let { node; remaining; stack } = path;
+    var update = false; // Flag indicating if a value is set already and should be updated instead
 
     let stuckOn = switch (node, stack) {
+      case (#leaf _, _) { update := true; node }; // update existing leaf
+      case (#branch _, _) { update := true; node }; // update existing branch value
       case (_, null) {
         print("Stuck on root");
         trie;
       };
-      case (#leaf _, _) { node }; // update existing leaf
-      case (#branch _, _) { node }; // update existing branch value
       case (_, ?((k, n), _)) {
         switch (n) {
           case (#branch branch) {
@@ -110,16 +120,16 @@ module {
       case (#branch branch) {
         // replace existing
         if (remaining != []) Debug.trap("Can't get stuck on a branch with non empty key: " # Key.toText(remaining));
-        Debug.print("update branch value");
+        print("update branch value");
         updateBranchValue(branch, ?value);
       };
       case (#leaf leaf) {
         let matching = Key.matchingLength(leaf.key, remaining);
 
         // replace leaf with one of the following
-        if (leaf.key == remaining) {
+        if (update) {
           // replace existing
-          createLeaf(remaining, value);
+          createLeaf(leaf.key, value);
         } else if (leaf.key == []) {
           // branch(leaf.value)->new
           let newLeaf = createLeaf(Key.slice(remaining, 1), value);
@@ -282,7 +292,7 @@ module {
   };
 
   func encodeKey(key : Key, terminating : Bool) : EncodedKey {
-    Nibble.compactEncode(key, terminating);
+    Key.compactEncode(key, terminating);
   };
 
   func nodeValue(node : Node) : ?Value {
@@ -292,6 +302,57 @@ module {
       case (#leaf(leaf)) { ?leaf.value };
       case (#extension(ext)) { null };
     };
+  };
+
+  // Function `H(x)` where `x` is `RLP(node)` and `H(x) = keccak256(x) if len(x) >= 32 else x`
+  func nodeHash(node : Node) : Hash {
+    let serial = nodeSerialize(node);
+    return hashIfLong(serial);
+  };
+
+  func nodeRaw(node : Node) : [Buffer] {
+    switch (node) {
+      case (#nul) { [] };
+      case (#branch(branch)) {
+        let raw = Array.init<Buffer>(17, []);
+        for (i in Iter.range(0, 15)) {
+          switch (branch.nodes[i]) {
+            case (#nul) {};
+            case (_) { raw[i] := nodeHash(branch.nodes[i]) };
+          };
+        };
+        raw[16] := Option.get(branch.value, []);
+        Array.freeze(raw);
+      };
+      case (#leaf(leaf)) {
+        [Key.compactEncode(leaf.key, true), leaf.value];
+      };
+      case (#extension(ext)) {
+        [Key.compactEncode(ext.key, false), nodeHash(ext.node)];
+      };
+    };
+  };
+
+  func nodeSerialize(node : Node) : Buffer {
+    RLP.encodeOuter(nodeRaw(node));
+  };
+
+  func hashIfLong(data : Buffer) : Buffer {
+    if (data.size() >= 32) {
+      return Keccak.keccak(data);
+    } else {
+      return data;
+    };
+  };
+
+  public func hash(trie : Trie) : Hash = nodeHash(trie);
+
+  public func hashHex(trie : Trie) : Text {
+    var bytes = nodeHash(trie);
+    if (bytes.size() < 32) {
+      bytes := Keccak.keccak(bytes);
+    };
+    return Hex.toText(bytes);
   };
 
   public type Path = {

@@ -2,6 +2,7 @@ import { describe; it; itp; equal; Suite } = "mo:testing/SuiteState";
 import T "mo:testing/SuiteState";
 
 import Nibble "../../src/util/Nibble";
+import Key "../../src/trie/Key";
 
 module {
     type Nibble = Nibble.Nibble;
@@ -87,7 +88,7 @@ module {
                             "[1,2,3,4,5]",
                             func({}) : Bool {
                                 let nibbles : [Nibble] = [1, 2, 3, 4, 5];
-                                let encoded = Nibble.compactEncode(nibbles, false);
+                                let encoded = Key.compactEncode(nibbles, false);
                                 return encoded == [0x11, 0x23, 0x45];
                             },
                         ),
@@ -96,7 +97,7 @@ module {
                             "[1,2,3,4,5,6]",
                             func({}) : Bool {
                                 let nibbles : [Nibble] = [1, 2, 3, 4, 5, 6];
-                                let encoded = Nibble.compactEncode(nibbles, false);
+                                let encoded = Key.compactEncode(nibbles, false);
                                 return encoded == [0x00, 0x12, 0x34, 0x56];
                             },
                         ),

@@ -5,8 +5,24 @@ import Nat8 "mo:base/Nat8";
 import IterExtra "./IterExtra";
 import Result "mo:base/Result";
 import Trie "mo:base/Trie";
+import Debug "mo:base/Debug";
+import Text "mo:base/Text";
 
 module {
+
+    public func toText(bytes : [Nat8]) : Text {
+        var out = "";
+        for (byte in bytes.vals()) {
+            // TODO: optimize by using a Buffer and join?
+            out := out # encodeByte(byte);
+        };
+        return out;
+    };
+
+    public func toText2D(bytess : [[Nat8]]) : Text {
+        let texts = Array.map(bytess, toText);
+        return "[" # Text.join(", ", texts.vals()) # "]";
+    };
 
     public func toArray(hex : Text) : Result.Result<[var Nat8], Text> {
         let chars = hex.size();
@@ -52,6 +68,34 @@ module {
             case ('E') { ?14 };
             case ('F') { ?15 };
             case (_) { null };
+        };
+    };
+
+    func encodeByte(byte : Nat8) : Text {
+        return encodeNibble(byte / 16) # encodeNibble(byte % 16);
+    };
+
+    func encodeNibble(nibble : Nat8) : Text {
+        switch (nibble) {
+            case (0) { "0" };
+            case (1) { "1" };
+            case (2) { "2" };
+            case (3) { "3" };
+            case (4) { "4" };
+            case (5) { "5" };
+            case (6) { "6" };
+            case (7) { "7" };
+            case (8) { "8" };
+            case (9) { "9" };
+            case (10) { "a" };
+            case (11) { "b" };
+            case (12) { "c" };
+            case (13) { "d" };
+            case (14) { "e" };
+            case (15) { "f" };
+            case (_) {
+                Debug.trap("invalid value in encodeNibble: " # Nat8.toText(nibble));
+            };
         };
     };
 

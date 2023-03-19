@@ -7,6 +7,9 @@ import Nibble "../util/Nibble";
 import Nat8 "mo:base/Nat8";
 import Array "mo:base/Array";
 import Text "mo:base/Text";
+import Iter "mo:base/Iter";
+import Blob "mo:base/Blob";
+import Debug "mo:base/Debug";
 
 module {
     type Buffer = Buffer.Buffer;
@@ -15,10 +18,16 @@ module {
 
     public type Key = [Nibble];
 
+    public func fromText(text : Text) : Key {
+        let encoded = Text.encodeUtf8(text);
+        let bytes = Blob.toArray(encoded);
+        Nibble.fromArray(bytes);
+    };
+
     /// Convert a buffer into a key by applying RPL and Keccak
     public func fromBuffer(buffer : Buffer) : Result<Key, Text> {
-        let bbuffer = BaseBuffer.fromArray<Nat8>(buffer);
-        let rpl_encoded = switch (RLP.encode(#Uint8Array bbuffer)) {
+        let bBuffer = BaseBuffer.fromArray<Nat8>(buffer);
+        let rpl_encoded = switch (RLP.encode(#Uint8Array bBuffer)) {
             case (#ok(value)) { BaseBuffer.toArray(value) };
             case (#err(error)) { return #err("RPL error:" # error) };
         };
@@ -62,5 +71,29 @@ module {
     /// get the first nibble of the key and turn it into a Nat for using as index
     public func toIndex(key : Key) : Nat {
         Nat8.toNat(key[0]);
+    };
+
+    public func compactEncode(nibbles : [Nibble], terminating : Bool) : [Nat8] {
+        let even = nibbles.size() % 2 == 0;
+        let size = (nibbles.size() / 2) + 1;
+        var arr = Array.init<Nat8>(size, 0);
+
+        if (even) {
+            arr[0] := 0x00;
+            for (i in Iter.range(0, size - 2)) {
+                arr[i + 1] := (nibbles[i * 2] * 16) + nibbles[i * 2 +1];
+            };
+        } else {
+            arr[0] := 0x10 + nibbles[0];
+            for (i in Iter.range(0, size - 2)) {
+                arr[i + 1] := (nibbles[i * 2 + 1] * 16) + nibbles[i * 2 + 2];
+            };
+        };
+
+        if (terminating) {
+            arr[0] += 0x20;
+        };
+
+        return Array.freeze<Nat8>(arr);
     };
 };

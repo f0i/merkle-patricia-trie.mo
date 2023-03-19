@@ -8,6 +8,9 @@ type State = {};
 
 let s = Suite<State>({});
 
+TrieSpec.hashTests();
+TrieSpec.ethereumJsTests();
+
 await* s.run([
     TrieSpec.tests(),
     NibbleSpec.tests(),
