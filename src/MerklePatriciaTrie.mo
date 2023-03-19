@@ -23,7 +23,7 @@ module {
   type List<T> = List.List<T>;
 
   func print(msg : Text) {
-    Debug.print(msg);
+    //Debug.print(msg);
   };
 
   public type Node = {
@@ -33,7 +33,7 @@ module {
     #extension : Extension;
   };
 
-  type Branch = {
+  public type Branch = {
     // 16 nodes
     nodes : [Node];
     value : ?Value;
@@ -307,7 +307,7 @@ module {
   // Function `H(x)` where `x` is `RLP(node)` and `H(x) = keccak256(x) if len(x) >= 32 else x`
   func nodeHash(node : Node) : Hash {
     let serial = nodeSerialize(node);
-    Debug.print("serialized: " # Hex.toText(serial));
+    print("serialized: " # Hex.toText(serial));
     return hashIfLong(serial);
   };
 
@@ -315,27 +315,27 @@ module {
     switch (node) {
       case (#nul) { [] };
       case (#branch(branch)) {
-        let raw = Array.init<Buffer>(17, []);
+        let raw = Array.init<Buffer>(17, [0x80]);
         for (i in Iter.range(0, 15)) {
           switch (branch.nodes[i]) {
             case (#nul) {};
-            case (_) { raw[i] := nodeHash(branch.nodes[i]) };
+            case (_) { raw[i] := RLP.encodeHash(nodeHash(branch.nodes[i])) };
           };
         };
-        raw[16] := Option.get(branch.value, []);
-        RLP.encodeEach(Array.freeze(raw));
+        raw[16] := RLP.encode(Option.get(branch.value, []));
+        Array.freeze(raw);
       };
       case (#leaf(leaf)) {
         RLP.encodeEach([Key.compactEncode(leaf.key, true), leaf.value]);
       };
       case (#extension(ext)) {
-        RLP.encodeEach([Key.compactEncode(ext.key, false), nodeHash(ext.node)]);
+        ([RLP.encode(Key.compactEncode(ext.key, false)), RLP.encodeHash(nodeHash(ext.node))]);
       };
     };
   };
 
   func nodeSerialize(node : Node) : Buffer {
-    Debug.print("nodeSerialize: " # Hex.toText2D(nodeRaw(node)));
+    print("nodeSerialize: " # Hex.toText2D(nodeRaw(node)));
     RLP.encodeOuter(nodeRaw(node));
   };
 
@@ -439,7 +439,9 @@ module {
           };
         };
       };
-      case (#leaf(leaf)) { "leaf(" # Key.toText(leaf.key) # ")" };
+      case (#leaf(leaf)) {
+        "leaf(" # Key.toText(leaf.key) # ", " # Hex.toText(leaf.value) # ")";
+      };
       case (#extension(ext)) {
         "extension(" # Key.toText(ext.key) # ": " # nodeToText(ext.node) # ")";
       };

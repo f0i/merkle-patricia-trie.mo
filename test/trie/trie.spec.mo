@@ -182,8 +182,19 @@ module {
                 value = Value.fromText("one");
                 hash = [];
             };
-            Debug.print(Trie.hashHex(#leaf leaf));
+            //Debug.print(Trie.hashHex(#leaf leaf));
             assert (Trie.hashHex(#leaf leaf)) == "2b77e8547bc55e2a95227c939f9f9d67952de1e970a017e0910be510b090aff3";
+
+            name "#branch";
+            let branch : Trie.Branch = {
+                nodes = [#nul, #nul, #nul, #nul, #nul, #nul, #nul, #nul, #nul, #nul, #nul, #nul, #nul, #nul, #nul, #nul];
+                value = ?Value.fromText("one");
+                hash = [];
+            };
+            //Debug.print(Trie.hashHex(#branch branch));
+            assert (Trie.hashHex(#branch branch)) == "5798fa3858f12926c10e79dfae7fc774672634926d378c404d3ded09465f6866";
+
+            name "#extension";
         };
 
         section "Hashes";
@@ -203,7 +214,7 @@ module {
             trie := Trie.put(trie, Key.fromText("test"), Value.fromText("abcdefghijklmnopqrstuvwxyz1234567890"));
             assert (Trie.hashHex(trie)) == "bee0f9cda4533ccb7ee8ab1a7a9c72615feb2a604d583240edf4e97eb75c2e1d";
 
-            name "Two a big values: ext->branch(val1)->leaf(val2)";
+            name "Two big values: ext->branch(val1)->leaf(val2)";
             trie := Trie.init();
             trie := Trie.put(trie, Key.fromText("test"), Value.fromText("abcdefghijklmnopqrstuvwxyz1234567890"));
             trie := Trie.put(trie, Key.fromText("test2"), Value.fromText("abcdefghijklmnopqrstuvwxyz1234567890"));
@@ -211,13 +222,21 @@ module {
             //Debug.print(Trie.hashHex(trie));
             assert (Trie.hashHex(trie)) == "7ea3b196c7c75d4267756e00db749e6b62a9ddf0162e12cfcfc6957f14ac52a2";
 
-            name "Two a big values: ext->branch()->leaf(val1)/leaf(val2)";
+            name "Two small values: ext->branch()->leaf(val1)/leaf(val2)";
             trie := Trie.init();
             trie := Trie.put(trie, Key.fromText("test1"), Value.fromText("abcdefghijklmnopqrstuvwxyz1234567890"));
             trie := Trie.put(trie, Key.fromText("test2"), Value.fromText("abcdefghijklmnopqrstuvwxyz1234567890"));
             //Debug.print(Trie.nodeToText(trie));
             //Debug.print(Trie.hashHex(trie));
             assert (Trie.hashHex(trie)) == "0666419889b0a23d855e8a677e77158da7ff183d7135915ed7a92bb1d8714f92";
+
+            name "Two small values: branch()->leaf(val1)/leaf(val2)";
+            trie := Trie.init();
+            trie := Trie.put(trie, Key.fromText("1"), Value.fromText("one"));
+            trie := Trie.put(trie, Key.fromText("x"), Value.fromText("two"));
+            //Debug.print(Trie.nodeToText(trie));
+            //Debug.print(Trie.hashHex(trie));
+            assert (Trie.hashHex(trie)) == "dd833fd93e1a5e2e221d74e8a3fc594f3bb43b5d0edbf24c6c3c95ab2f0615fe";
         };
     };
 
@@ -250,9 +269,8 @@ module {
 
             name "should create a branch here";
             trie := Trie.put(trie, Key.fromText("doge"), Value.fromText("coin"));
-            // TODO: compare trie with at this point with eth implementation, hash doesn't match
-            Debug.print(Trie.nodeToText(trie));
-            Debug.print(Trie.hashHex(trie));
+            //Debug.print(Trie.nodeToText(trie));
+            //Debug.print(Trie.hashHex(trie));
             assert Trie.hashHex(trie) == "de8a34a8c1d558682eae1528b47523a483dd8685d6db14b291451a66066bf0fc";
 
             name "should get a value that is in a branch";
@@ -271,7 +289,7 @@ module {
                 name "should store a longer string";
                 trie := Trie.put(trie, Key.fromText("done"), longString);
                 trie := Trie.put(trie, Key.fromText("doge"), Value.fromText("coin"));
-                //TODO: assert Trie.hashHex(trie) == longStringRoot;
+                assert Trie.hashHex(trie) == longStringRoot;
 
                 name "should retrieve a longer value";
                 assert Trie.get(trie, Key.fromText("done")) == ?longString;

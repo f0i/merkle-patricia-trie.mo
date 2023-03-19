@@ -14,6 +14,13 @@ module {
     type InternalResult = Result.Result<Buffer, Text>;
     type EncodeResult = Result.Result<[Nat8], Text>;
 
+    public func encodeHash(array : [Nat8]) : [Nat8] {
+        if (array.size() == 32) {
+            encode(array);
+        } else {
+            array;
+        };
+    };
     public func encode(array : [Nat8]) : [Nat8] {
         let buffer = Buffer.fromArray<Nat8>(array);
         let rlpResult = RLP.encode(#Uint8Array buffer);
@@ -23,6 +30,9 @@ module {
 
     public func encodeEach(arrays : [[Nat8]]) : [[Nat8]] {
         Array.map<[Nat8], [Nat8]>(arrays, encode);
+    };
+    public func encodeEachHash(arrays : [[Nat8]]) : [[Nat8]] {
+        Array.map<[Nat8], [Nat8]>(arrays, encodeHash);
     };
 
     public func encodeOuter(arrays : [[Nat8]]) : [Nat8] {
