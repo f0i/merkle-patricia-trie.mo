@@ -1,109 +1,78 @@
 import { describe; it; itp; equal; Suite } = "mo:testing/SuiteState";
 import T "mo:testing/SuiteState";
 
+import { section; test } = "../Test";
+
 import Nibble "../../src/util/Nibble";
 import Key "../../src/trie/Key";
 
 module {
     type Nibble = Nibble.Nibble;
 
-    public func tests() : T.NamedTest<{}> {
-        describe(
-            "Nibbles",
-            [
-                it(
-                    "should be able to convert back and forth to byte arrays",
-                    func({}) : Bool {
-                        let arr : [Nat8] = [10, 20, 30, 40];
-                        let nibbles = Nibble.fromArray(arr);
-                        let back = Nibble.toArray(nibbles);
-                        return back == arr;
-                    },
-                ),
+    public func tests() {
+        section "Nibbles";
+        do {
+            test "should be able to convert back and forth to byte arrays";
+            do {
+                let arr : [Nat8] = [10, 20, 30, 40];
+                let nibbles = Nibble.fromArray(arr);
+                let back = Nibble.toArray(nibbles);
+                assert back == arr;
+            };
 
-                describe(
-                    "can be compared",
-                    [
-                        it(
-                            "equal",
-                            func({}) : Bool {
-                                let arr : [Nat8] = [0x12, 0x34, 0x56];
-                                let ref : [Nibble] = [1, 2, 3, 4, 5, 6];
-                                let nibbles = Nibble.fromArray(arr);
-                                return Nibble.compare(nibbles, ref) == #equal;
-                            },
-                        ),
-                        it(
-                            "greater",
-                            func({}) : Bool {
-                                let arr : [Nat8] = [0x12, 0x34, 0x56];
-                                let ref : [Nibble] = [1, 2, 2, 4, 5, 6];
-                                let nibbles = Nibble.fromArray(arr);
-                                return Nibble.compare(nibbles, ref) == #greater;
-                            },
-                        ),
-                        it(
-                            "longer, same prefix",
-                            func({}) : Bool {
-                                let arr : [Nat8] = [0x12, 0x34, 0x56];
-                                let ref : [Nibble] = [1, 2, 2, 4, 5, 6, 7];
-                                let nibbles = Nibble.fromArray(arr);
-                                return Nibble.compare(nibbles, ref) == #greater;
-                            },
-                        ),
-                        it(
-                            "less",
-                            func({}) : Bool {
-                                let arr : [Nat8] = [0x12, 0x34, 0x56];
-                                let ref : [Nibble] = [1, 2, 4, 4, 5, 6];
-                                let nibbles = Nibble.fromArray(arr);
-                                return Nibble.compare(nibbles, ref) == #less;
-                            },
-                        ),
-                        it(
-                            "shorter, same prefix",
-                            func({}) : Bool {
-                                let arr : [Nat8] = [0x12, 0x34, 0x56];
-                                let ref : [Nibble] = [1, 2, 2, 4, 5];
-                                let nibbles = Nibble.fromArray(arr);
-                                return Nibble.compare(nibbles, ref) == #greater;
-                            },
-                        ),
-                    ],
-                ),
+            section "Nibbles can be compared";
+            do {
 
-                it(
-                    "replace high nibble",
-                    func({}) : Bool {
-                        let byte : Nat8 = 0x56;
-                        let nibble : Nibble = 0xA;
-                        return Nibble.replaceHigh(byte, nibble) == 0xA6;
-                    },
-                ),
+                test "equal";
+                do {
+                    let arr : [Nat8] = [0x12, 0x34, 0x56];
+                    let ref : [Nibble] = [1, 2, 3, 4, 5, 6];
+                    let nibbles = Nibble.fromArray(arr);
+                    assert Nibble.compare(nibbles, ref) == #equal;
+                };
 
-                describe(
-                    "compact encode",
-                    [
-                        it(
-                            "[1,2,3,4,5]",
-                            func({}) : Bool {
-                                let nibbles : [Nibble] = [1, 2, 3, 4, 5];
-                                let encoded = Key.compactEncode(nibbles, false);
-                                return encoded == [0x11, 0x23, 0x45];
-                            },
-                        ),
+                test "greater";
+                do {
+                    let arr : [Nat8] = [0x12, 0x34, 0x56];
+                    let ref : [Nibble] = [1, 2, 2, 4, 5, 6];
+                    let nibbles = Nibble.fromArray(arr);
+                    assert Nibble.compare(nibbles, ref) == #greater;
+                };
 
-                        it(
-                            "[1,2,3,4,5,6]",
-                            func({}) : Bool {
-                                let nibbles : [Nibble] = [1, 2, 3, 4, 5, 6];
-                                let encoded = Key.compactEncode(nibbles, false);
-                                return encoded == [0x00, 0x12, 0x34, 0x56];
-                            },
-                        ),
-                    ],
-                ),
-            ],
-        );
+                test "longer, same prefix";
+                do {
+                    let arr : [Nat8] = [0x12, 0x34, 0x56];
+                    let ref : [Nibble] = [1, 2, 2, 4, 5, 6, 7];
+                    let nibbles = Nibble.fromArray(arr);
+                    assert Nibble.compare(nibbles, ref) == #greater;
+                };
+
+                test "less";
+                do {
+                    let arr : [Nat8] = [0x12, 0x34, 0x56];
+                    let ref : [Nibble] = [1, 2, 4, 4, 5, 6];
+                    let nibbles = Nibble.fromArray(arr);
+                    assert Nibble.compare(nibbles, ref) == #less;
+                };
+
+                test "shorter, same prefix";
+                do {
+                    let arr : [Nat8] = [0x12, 0x34, 0x56];
+                    let ref : [Nibble] = [1, 2, 2, 4, 5];
+                    let nibbles = Nibble.fromArray(arr);
+                    assert Nibble.compare(nibbles, ref) == #greater;
+                };
+            };
+
+            section "Nibble manipulation";
+
+            test "replace high nibble";
+            do {
+                let byte : Nat8 = 0x56;
+                let nibble : Nibble = 0xA;
+                assert Nibble.replaceHigh(byte, nibble) == 0xA6;
+            };
+
+        };
     };
 };

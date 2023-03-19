@@ -10,11 +10,7 @@ let s = Suite<State>({});
 
 TrieSpec.hashTests();
 TrieSpec.ethereumJsTests();
+TrieSpec.basicTests();
+NibbleSpec.tests();
 
-await* s.run([
-    TrieSpec.tests(),
-    NibbleSpec.tests(),
-    KeySpec.tests(),
-
-    TrieSpec.testsFromEthereumjs(),
-]);
+KeySpec.tests();

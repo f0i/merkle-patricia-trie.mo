@@ -1,5 +1,6 @@
 import { describe; it; itp; equal; Suite } = "mo:testing/SuiteState";
 import T "mo:testing/SuiteState";
+import { section; test } = "../Test";
 
 import Option "mo:base/Option";
 
@@ -25,149 +26,144 @@ module {
         };
     };
 
-    public func tests() : T.NamedTest<{}> {
-        describe(
-            "Trie",
-            [
-                it(
-                    "trie is not empty after put",
-                    func({}) : Bool {
-                        var trie = Trie.init();
-                        let key = testKey();
-                        let path = Trie.findPath(trie, key, null);
-                        trie := Trie.put(trie, key, []);
-                        return trie != #nul;
-                    },
-                ),
-                it(
-                    "get missing path",
-                    func({}) : Bool {
-                        let trie = Trie.init();
-                        let key = testKey();
-                        let path = Trie.findPath(trie, key, null);
-                        let expected : Path = {
-                            node = #nul;
-                            remaining = key;
-                            stack = null;
-                        };
-                        return path == expected;
-                    },
-                ),
+    public func basicTests() {
+        var trie = Trie.init();
+        var key = testKey();
 
-                it(
-                    "get existing path with branch",
-                    func({}) : Bool {
-                        var trie = Trie.init();
-                        let key1 = Key.fromKeyBytes([0x12, 0x31]);
-                        let key2 = Key.fromKeyBytes([0x22, 0x32]);
-                        let key3 = Key.fromKeyBytes([0x32, 0x33]);
-                        trie := Trie.put(trie, key1, []);
-                        trie := Trie.put(trie, key2, []);
-                        trie := Trie.put(trie, key3, []);
+        section "Trie";
+        do {
+            test "trie is not empty after put";
+            trie := Trie.put(trie, key, []);
+            assert trie != #nul;
 
-                        let path = Trie.findPath(trie, key2, null);
-                        let expected : Trie.Node = #leaf {
-                            key = Key.slice(key2, 1);
-                            value = [];
-                            hash = [];
-                        };
-                        return (path.node == expected);
-                    },
-                ),
+            test "get missing path";
+            trie := Trie.init();
+            assert Trie.findPath(trie, key, null) == {
+                node = #nul;
+                remaining = key;
+                stack = null;
+            };
 
-                it(
-                    "extension -> branch -> 3 leafs",
-                    func({}) : Bool {
-                        var trie = Trie.init();
-                        let key1 = Key.fromKeyBytes([0x12, 0x31]);
-                        let key2 = Key.fromKeyBytes([0x12, 0x32]);
-                        let key3 = Key.fromKeyBytes([0x12, 0x33, 0x45]);
-                        trie := Trie.put(trie, key1, [1]);
-                        trie := Trie.put(trie, key2, [2]);
-                        trie := Trie.put(trie, key3, [3]);
+            test "get existing path with branch";
+            do {
+                var trie = Trie.init();
+                let key1 = Key.fromKeyBytes([0x12, 0x31]);
+                let key2 = Key.fromKeyBytes([0x22, 0x32]);
+                let key3 = Key.fromKeyBytes([0x32, 0x33]);
+                trie := Trie.put(trie, key1, []);
+                trie := Trie.put(trie, key2, []);
+                trie := Trie.put(trie, key3, []);
 
-                        let path = Trie.findPath(trie, key2, null);
-                        let expected : Trie.Node = #leaf {
-                            key = [];
-                            value = [2];
-                            hash = [];
-                        };
-                        //Debug.print(Trie.nodeToText(trie));
-                        //Debug.print(Trie.pathToText(path));
-                        return (path.node == expected);
-                    },
-                ),
+                let path = Trie.findPath(trie, key2, null);
+                let expected : Trie.Node = #leaf {
+                    key = Key.slice(key2, 1);
+                    value = [];
+                    hash = [];
+                };
+                assert path.node == expected;
+            };
 
-                it(
-                    "Different order should produce the same trie",
-                    func({}) : Bool {
-                        var keyValuePairs : [(Key, Trie.Value)] = [
-                            ([1 : Nibble, 2, 3, 4, 5, 6], []),
-                            ([1 : Nibble, 2, 3, 4, 5], []),
-                            ([1 : Nibble, 2, 3], []),
-                            ([1 : Nibble, 2, 3, 4], []),
-                        ];
-                        var trie1 = Trie.init();
-                        for ((key, value) in keyValuePairs.vals()) {
-                            trie1 := Trie.put(trie1, key, value);
-                        };
+            test "get existing path with branch";
+            do {
+                var trie = Trie.init();
+                let key1 = Key.fromKeyBytes([0x12, 0x31]);
+                let key2 = Key.fromKeyBytes([0x22, 0x32]);
+                let key3 = Key.fromKeyBytes([0x32, 0x33]);
+                trie := Trie.put(trie, key1, []);
+                trie := Trie.put(trie, key2, []);
+                trie := Trie.put(trie, key3, []);
 
-                        var trie2 = Trie.init();
-                        for ((key, value) in Array.reverse(keyValuePairs).vals()) {
-                            trie2 := Trie.put(trie2, key, value);
-                        };
+                let path = Trie.findPath(trie, key2, null);
+                let expected : Trie.Node = #leaf {
+                    key = Key.slice(key2, 1);
+                    value = [];
+                    hash = [];
+                };
+                assert (path.node == expected);
+            };
 
-                        // check if all key are set
-                        for ((key, value) in keyValuePairs.vals()) {
-                            if (Trie.get(trie1, key) == null) {
-                                Debug.print("in trie: " # Trie.nodeToText(trie2));
-                                Debug.print("in trie: " # Trie.nodeToText(trie1));
-                                Debug.print("key not found: " # Key.toText(key));
-                                return false;
-                            };
-                        };
+            test "extension -> branch -> 3 leafs";
+            do {
+                var trie = Trie.init();
+                let key1 = Key.fromKeyBytes([0x12, 0x31]);
+                let key2 = Key.fromKeyBytes([0x12, 0x32]);
+                let key3 = Key.fromKeyBytes([0x12, 0x33, 0x45]);
+                trie := Trie.put(trie, key1, [1]);
+                trie := Trie.put(trie, key2, [2]);
+                trie := Trie.put(trie, key3, [3]);
 
-                        return (trie1 == trie2);
-                    },
-                ),
+                let path = Trie.findPath(trie, key2, null);
+                let expected : Trie.Node = #leaf {
+                    key = [];
+                    value = [2];
+                    hash = [];
+                };
+                //Debug.print(Trie.nodeToText(trie));
+                //Debug.print(Trie.pathToText(path));
+                assert (path.node == expected);
+            };
 
-                it(
-                    "Resinsert shouldn't change the trie",
-                    func({}) : Bool {
-                        var keyValuePairs : [(Key, Trie.Value)] = [
-                            ([1 : Nibble, 2, 3, 4, 5, 6], []),
-                            ([1 : Nibble, 2, 3, 4, 5], []),
-                            ([1 : Nibble, 2, 3], []),
-                            ([1 : Nibble, 2, 3, 4], []),
-                        ];
-                        var trie1 = Trie.init();
-                        for ((key, value) in keyValuePairs.vals()) {
-                            trie1 := Trie.put(trie1, key, value);
-                        };
+            test "Different order should produce the same trie";
+            do {
+                var keyValuePairs : [(Key, Trie.Value)] = [
+                    ([1 : Nibble, 2, 3, 4, 5, 6], []),
+                    ([1 : Nibble, 2, 3, 4, 5], []),
+                    ([1 : Nibble, 2, 3], []),
+                    ([1 : Nibble, 2, 3, 4], []),
+                ];
+                var trie1 = Trie.init();
+                for ((key, value) in keyValuePairs.vals()) {
+                    trie1 := Trie.put(trie1, key, value);
+                };
 
-                        var trie2 = Trie.init();
+                var trie2 = Trie.init();
+                for ((key, value) in Array.reverse(keyValuePairs).vals()) {
+                    trie2 := Trie.put(trie2, key, value);
+                };
 
-                        // check if all key are set
-                        for ((key, value) in keyValuePairs.vals()) {
-                            trie2 := Trie.put(trie1, key, value);
-                            if (trie1 != trie2) {
-                                Debug.print("the trie: " # Trie.nodeToText(trie1));
-                                Debug.print(" != trie: " # Trie.nodeToText(trie2));
-                                return false;
-                            };
-                        };
+                // check if all key are set
+                for ((key, value) in keyValuePairs.vals()) {
+                    if (Trie.get(trie1, key) == null) {
+                        Debug.print("in trie: " # Trie.nodeToText(trie2));
+                        Debug.print("in trie: " # Trie.nodeToText(trie1));
+                        Debug.print("key not found: " # Key.toText(key));
+                        assert false;
+                    };
+                };
 
-                        return (trie1 == trie2);
-                    },
-                ),
+                assert (trie1 == trie2);
+            };
 
-            ],
-        );
+            test "Reinsert shouldn't change the trie";
+            do {
+                var keyValuePairs : [(Key, Trie.Value)] = [
+                    ([1 : Nibble, 2, 3, 4, 5, 6], []),
+                    ([1 : Nibble, 2, 3, 4, 5], []),
+                    ([1 : Nibble, 2, 3], []),
+                    ([1 : Nibble, 2, 3, 4], []),
+                ];
+                var trie1 = Trie.init();
+                for ((key, value) in keyValuePairs.vals()) {
+                    trie1 := Trie.put(trie1, key, value);
+                };
+
+                var trie2 = Trie.init();
+
+                // check if all key are set
+                for ((key, value) in keyValuePairs.vals()) {
+                    trie2 := Trie.put(trie1, key, value);
+                    if (trie1 != trie2) {
+                        Debug.print("the trie: " # Trie.nodeToText(trie1));
+                        Debug.print(" != trie: " # Trie.nodeToText(trie2));
+                        assert false;
+                    };
+                };
+
+                assert (trie1 == trie2);
+            };
+
+        };
     };
-
-    func section(title : Text) = Debug.print("\n#" # " " # title # "\n");
-
-    func test(name : Text) = Debug.print("- " # name);
 
     public func hashTests() {
         var trie = Trie.init();
@@ -331,30 +327,4 @@ module {
         };
     };
 
-    public func testsFromEthereumjs() : T.NamedTest<{}> {
-        describe(
-            "from ethereumjs",
-            [
-                describe(
-                    "simple save and retrieve",
-                    [
-                        it(
-                            "should not crash if given a non-existent root",
-                            func({}) : Bool {
-                                let root = switch (Buffer.fromHex("3f4399b08efe68945c1cf90ffe85bbe3ce978959da753f9e649f034015b8817d")) {
-                                    case (?value) { value };
-                                    case (null) {
-                                        return false;
-                                    };
-                                };
-                                let trie = Trie.init();
-                                let value = Trie.get(trie, Buffer.fromText("test"));
-                                return Option.isNull(value);
-                            },
-                        ),
-                    ],
-                ),
-            ],
-        );
-    };
 };
