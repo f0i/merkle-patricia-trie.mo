@@ -1,5 +1,3 @@
-import { describe; it; itp; equal; Suite } = "mo:testing/SuiteState";
-import T "mo:testing/SuiteState";
 import { section; test } = "../Test";
 
 import Option "mo:base/Option";
@@ -224,6 +222,7 @@ module {
             trie := Trie.put(trie, Key.fromText("test2"), Value.fromText("abcdefghijklmnopqrstuvwxyz1234567890"));
             //Debug.print(Trie.nodeToText(trie));
             //Debug.print(Trie.hashHex(trie));
+            //Debug.print("expected: 0666419889b0a23d855e8a677e77158da7ff183d7135915ed7a92bb1d8714f92");
             assert (Trie.hashHex(trie)) == "0666419889b0a23d855e8a677e77158da7ff183d7135915ed7a92bb1d8714f92";
 
             test "Two small values: branch()->leaf(val1)/leaf(val2)";

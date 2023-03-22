@@ -10,6 +10,7 @@ import Text "mo:base/Text";
 import Iter "mo:base/Iter";
 import Blob "mo:base/Blob";
 import Debug "mo:base/Debug";
+import Util "../util";
 
 module {
     type Buffer = Buffer.Buffer;
@@ -48,17 +49,11 @@ module {
 
     // TODO: rename to `drop`
     public func slice(key : Key, n : Nat) : Key {
-        if (n == 0) return key;
-        let size = key.size();
-        if (size < n) return [];
-        Array.tabulate<Nibble>(size - n, func i = key[i + n]);
+        return Util.dropBytes(key, n);
     };
 
     public func take(key : Key, n : Nat) : Key {
-        if (n == 0) return [];
-        let size = key.size();
-        if (n >= size) return key;
-        Array.tabulate<Nibble>(n, func i = key[i]);
+        Util.takeBytes(key, n);
     };
 
     public func toText(key : Key) : Text {

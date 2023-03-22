@@ -2,6 +2,7 @@ import { section; test } = "../../Test";
 
 import Nibble "../../../src/util/Nibble";
 import Key "../../../src/trie/Key";
+import Debug "mo:base/Debug";
 
 module {
     type Key = Key.Key;
@@ -35,6 +36,7 @@ module {
 
                 let arr : [Nat8] = [0x10, 0x20, 0x30, 0x40];
                 let key = Key.fromKeyBytes(arr);
+                //Debug.print(Key.toText(Key.take(key, 3)));
                 assert Key.take(key, 3) == [1, 0, 2];
             };
 

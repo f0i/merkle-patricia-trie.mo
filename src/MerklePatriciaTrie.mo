@@ -14,6 +14,9 @@ import RLP "util/RLPHelper";
 import Keccak "util/Keccak";
 import Option "mo:base/Option";
 import Hex "util/Hex";
+import TrieMap "mo:base/TrieMap";
+import BaseHash "mo:base/Hash";
+import Nat32 "mo:base/Nat32";
 
 module {
   public type MerklePatriciaTrie = Node;
@@ -62,9 +65,11 @@ module {
   /// In the case of ethereum this is keccak256(rlp(value))
   public type Key = [Nibble];
 
+  public type Proof = [Buffer];
+
   /// Key with prefix nibble indicating type and path length:
-  /// prefix 0x00 estension, even
-  /// prefix 0x1 estension, odd
+  /// prefix 0x00 extension, even
+  /// prefix 0x1 extension, odd
   /// prefix 0x20 leaf, even
   /// prefix 0x3 leaf, odd
   /// This will always result in a even length, so it is save to convert into [Nat8]
@@ -72,6 +77,61 @@ module {
 
   public func init() : Trie {
     #nul;
+  };
+
+  public func createProof(trie : Trie, key : Key) : Proof {
+    let path : Path = findPath(trie, key, null);
+    var proof = Array.init<Buffer>(List.size(path.stack) + 1, []);
+
+    var i = 0;
+    for ((k, node) in List.toIter(path.stack)) {
+      proof[i] := nodeSerialize(node);
+      i += 1;
+    };
+    proof[i] := nodeSerialize(path.node);
+    return Array.freeze(proof);
+  };
+
+  func hashEqual(self : Hash, other : Hash) : Bool = self == other;
+  func hashHash(self : Hash) : BaseHash.Hash {
+    if (Array.size(self) == 0) { return 0 };
+    var out : Nat32 = Nat32.fromNat(Nat8.toNat(self[0]));
+    if (Array.size(self) == 1) { return out };
+    out += Nat32.fromNat(Nat8.toNat(self[1]));
+    if (Array.size(self) == 2) { return out };
+    out += Nat32.fromNat(Nat8.toNat(self[2]));
+    if (Array.size(self) == 3) { return out };
+    return out + Nat32.fromNat(Nat8.toNat(self[3]));
+  };
+
+  public func verifyProof(root : Hash, key : Key, proof : Proof) : ?Value {
+    let map = TrieMap.TrieMap<Hash, Node>(hashEqual, hashHash);
+    for (item in proof.vals()) {
+      let node = nodeDecode(item);
+      let hash = nodeHash(node);
+      map.put(hash, node);
+    };
+
+    Debug.print("TODO: implement verifyProof");
+
+    return null;
+  };
+
+  func nodeDecode(rlpData : Buffer) : Node {
+    let data = RLP.decode(rlpData);
+
+    switch (data) {
+      case (#ok(value)) {
+        Debug.print("nodeDecode: " # Hex.toText2D(value));
+      };
+      case (#err(msg)) {
+        Debug.print("nodeDecode error: " # msg);
+        // TODO: handle error
+        assert false;
+      };
+    };
+
+    return #nul;
   };
 
   public func delete(trie : Trie, key : Key) : Trie {
@@ -279,20 +339,12 @@ module {
     return nodeValue(path.node);
   };
 
-  public func del(trie : Trie, key : Buffer) : ?Buffer {
+  func lookupNode(trie : Trie, node : Buffer) {
     Debug.trap("implement del");
   };
 
-  func lookupNode(trie : Trie, node : Buffer) {
-
-  };
-
   func allChildren(node : Node) : [Node] {
-    Debug.trap("implement");
-  };
-
-  func encodeKey(key : Key, terminating : Bool) : EncodedKey {
-    Key.compactEncode(key, terminating);
+    Debug.trap("implement allChildren");
   };
 
   func nodeValue(node : Node) : ?Value {
