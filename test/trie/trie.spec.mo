@@ -9,8 +9,10 @@ import Debug "mo:base/Debug";
 import Nibble "../../src/util/Nibble";
 import Array "mo:base/Array";
 import Value "../../src/util/Value";
+import Iter "mo:base/Iter";
 
 module {
+
     type Trie = Trie.Trie;
     type Path = Trie.Path;
     type Buffer = Buffer.Buffer;
@@ -188,7 +190,6 @@ module {
             //Debug.print(Trie.hashHex(#branch branch));
             assert (Trie.hashHex(#branch branch)) == "5798fa3858f12926c10e79dfae7fc774672634926d378c404d3ded09465f6866";
 
-            test "#extension";
         };
 
         section "Hashes";
@@ -232,6 +233,49 @@ module {
             //Debug.print(Trie.nodeToText(trie));
             //Debug.print(Trie.hashHex(trie));
             assert (Trie.hashHex(trie)) == "dd833fd93e1a5e2e221d74e8a3fc594f3bb43b5d0edbf24c6c3c95ab2f0615fe";
+
+            test "keep short rlp encoded values, hash long values";
+            let hashes = [
+                "e8e4a30ec58b7b915b4c7f7276663b95a1bd725ea0ea378d8da55956ebb6692d",
+                "1b5614127f3503831daadeefc30499f27edd18b7376df2b027dd40c81f7d7e66",
+                "fa1f0b535e834b2f869728ce13396be068205e4eb7e100933b804479b2465870",
+                "5706358e564677a3233713d614429e8422be3dd6011e831d8454ae7eb1244c09",
+                "3d02333a7af77c5968b861755eeb5747c75f458b3234a421974d8a033c79d173",
+                "730b9deea969f5b9d24d664f289fdf6c91621f27d92c0843e594fa6a1bf653af",
+                "fd02a38b9af40f22e1586e5719f425a5aea29751d8a818e137e2cb23b811052e",
+                "f9d4d7e90e3ab9402ddee163d97dd5524f333fbf07221950f0284027e525aaa6",
+                "aaa63abdd9c2c42de165ae665f59deeb528827f3c6b60cfe4635612fbaba60cd",
+                "71abdbc8be465ea4e312ccdac425e09c443bde11a94b53a6c9c4ab71db2551c2",
+                "9351fb065da980a1583cb3775dc872b63a54339ba6feed66cf1108d0f22d7dda",
+                "a89a9063f5134f98eaa5f11f5d264eb08e9bedfdba4d697d27977b9fc107c025",
+                "4114fda6fb0313bae74590bbc5a6ea07250dbab977a0663aebddd3c24a2a5e30",
+                "5569f95067b99b54ae88da127b7d81aded69600e068be7f24be273f92ff31a64",
+                "34f98e2bfea42eb1b3ad14dc77894e6b6322a0fa33d17049440af99d6b35df29",
+                "25d433e1fabb2abc4429aa3cbbce16ffe91f494f1bc6490f10e1710c087c315d",
+                "460ee005d7b69878641bd6e8c3e4f7755d9133e7ddd509cb431a378a2bb749c2",
+                "6b91b6cd61b8a1aaa804a5983905d7497e3c30e24eaecf5e1caa0c06edf444b3",
+                "b7007a98beda1298e03c0d1e7d4f60ec99a2208b592996bbd8dc4216fd1403af",
+                "9c1f212d7622634a9edc34d0eab415d98797892ec8e91a7d9c92a01e87e0a2e9",
+                "3876ce4d3e14d9582bb266af0d82e5901ce6e2cb25510110350ed353403cd395",
+                "bb439320a37815374a2c3845881262eda66998548db40aa73053beccdfc7e951",
+                "82e0904e8ff636d70a938163d93c01003a6c457d3768601c0d3e7c0f1948a4cf",
+                "287744c590b6943409005ef98f9f66d3686d199f29f40282eb938016f3f761a3",
+                "a83032157cc2852d849aea4aa87bdc1ef7668e5bb706dbb8ef45dbed5bcb45b7",
+                "dfee2e5018658207b620f76c1f44f5d2717a71bf58cbef539382999fc55c4bb9",
+                "b1fbf92003b61d665ac43011beac8a00d9a897359467c13771bc26d728a06a0c",
+                "87c7ab582e35ebcd8a4afa173b1492d6036c11b47cfc3d5098b52ec6c94cb3ca",
+                "01b3e2b60687f3ec4b0e7435d467f04e609739bd4679a6b47429752381530478",
+                "098c0f85e303a5462d661e5327a76e39bc0366140277b2cad7922f46a2278079",
+            ];
+
+            var value = "";
+            for (i in Iter.range(0, hashes.size() - 1)) {
+                value #= "x"; // add on x to the value -> "x", "xx", "xxx", ...
+                trie := Trie.init();
+                trie := Trie.put(trie, Key.fromText("te"), Value.fromText("branch"));
+                trie := Trie.put(trie, Key.fromText("test"), Value.fromText(value));
+                assert Trie.hashHex(trie) == hashes[i];
+            };
         };
     };
 
