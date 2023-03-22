@@ -39,10 +39,10 @@ module {
 
     public func encodeOuter(arrays : [[Nat8]]) : [Nat8] {
         if (arrays == []) {
-            return [0x80];
+            return [0x80]; // RLP encoded empty array
         };
         let len = Array.foldLeft<[Nat8], Nat>(arrays, 0, func(sum, a) = sum + a.size());
-        let lengthPrefix = RLP.encodeLength(len, 192);
+        let lengthPrefix = RLP.encodeLength(len, 192); // RLP prefix for lists
         let output = Util.unwrap(lengthPrefix);
         for (val in arrays.vals()) {
             output.append(Buffer.fromArray(val));
@@ -50,6 +50,7 @@ module {
         return Buffer.toArray(output);
     };
 
+    // Decode one level of an RLP encoded array
     public func decode(input : [Nat8]) : { #ok : [[Nat8]]; #err : Text } {
         let info = getPrefixInfo(input);
         switch (info) {
