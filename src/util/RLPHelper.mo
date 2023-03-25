@@ -10,17 +10,26 @@ import Nat8 "mo:base/Nat8";
 import RLP "rlp/encode";
 import RLPDecode "mo:rlp/rlp/decode";
 import RLPType "mo:rlp/types";
+import Hex "Hex";
 
 module {
+
     type Buffer = Buffer.Buffer<Nat8>;
     type InternalResult = Result.Result<Buffer, Text>;
     type EncodeResult = Result.Result<[Nat8], Text>;
 
+    // RLP encode an hash. If the "hash" is shorter, it is the already RLP encoded subtree
     public func encodeHash(array : [Nat8]) : [Nat8] {
         if (array.size() == 32) {
             encode(array);
-        } else {
+        } else if (array.size() < 32) {
             array;
+        } else {
+            Debug.print("encodeHash: already encoded: " # Hex.toText(array));
+            assert array[0] == 0xe7;
+            assert array.size() == 33;
+            assert false;
+            return array;
         };
     };
     public func encode(array : [Nat8]) : [Nat8] {
@@ -50,7 +59,45 @@ module {
         return Buffer.toArray(output);
     };
 
+    public func decodeValue(input : [Nat8]) : [Nat8] {
+        if (input == [0x80]) {
+            return []; // RLP encoded empty array
+        };
+        let info = getPrefixInfo(input);
+        switch (info) {
+            case (?{ rlpType = #shortString; data; prefix }) {
+                return Util.dropBytes(input, prefix);
+            };
+            case (?{ rlpType = #shortList; data; prefix }) {
+                let remaining = Util.dropBytes(input, prefix);
+                let encodedInner : [[Nat8]] = switch (splitMultiple(remaining)) {
+                    case (#ok(data)) { data };
+                    case (#err(msg)) { Debug.trap("decodeValue error: " # msg) };
+                };
+
+                return decodeEachByte(encodedInner);
+            };
+            case (?{ rlpType = #longList; data; prefix }) {
+                let remaining = Util.dropBytes(input, prefix);
+                let encodedInner : [[Nat8]] = switch (splitMultiple(remaining)) {
+                    case (#ok(data)) { data };
+                    case (#err(msg)) { Debug.trap("decodeValue error: " # msg) };
+                };
+
+                return decodeEachByte(encodedInner);
+            };
+            case (?{ rlpType = #longString }) {
+                Debug.trap("decodeValue: unexpected RLP type: #longString");
+            };
+            case (?{ rlpType = #singleByte }) {
+                Debug.trap("decodeValue: unexpected RLP type: #singleByte");
+            };
+            case (null) { Debug.trap("decodeValue: unexpected RLP type: null") };
+        };
+    };
+
     // Decode one level of an RLP encoded array
+    // Elements in lists will still be encoded
     public func decode(input : [Nat8]) : { #ok : [[Nat8]]; #err : Text } {
         let info = getPrefixInfo(input);
         switch (info) {
@@ -61,6 +108,10 @@ module {
                 return #ok([]);
             };
             case (?{ rlpType = #shortList; data; prefix }) {
+                if (input.size() != (data +prefix)) {
+                    // TODO: Handle errors
+                    Debug.trap("RLP.decode error: unexpected number of bytes");
+                };
                 let remaining = Util.dropBytes(input, prefix);
                 return splitMultiple(remaining);
             };
@@ -68,13 +119,14 @@ module {
                 let remaining = Util.dropBytes(input, prefix);
                 return splitMultiple(remaining);
             };
-            case (_) { return #err("unexpected RLP type") };
+            case (_) { return #err("RPL.decode error: unexpected RLP type") };
         };
     };
 
     /// Split an rlp byte sequence into multiple, each representing an rlp encoded string
     /// This function does not decode them; it just looks at the length of each segment
     func splitMultiple(input : [Nat8]) : { #ok : [[Nat8]]; #err : Text } {
+
         let info = getPrefixInfo(input);
         switch (info) {
             case (?{ prefix; data }) {
@@ -102,10 +154,10 @@ module {
                                 },
                             )
                         );
+                        #err("TODO: implement splitMultiple");
                     };
-                };
 
-                #err("TODO: implement splitMultiple");
+                };
             };
             case (null) {
                 return #err("RLP error: couldn't determine type or length");
@@ -113,7 +165,32 @@ module {
         };
     };
 
-    private func extractNat8Arrays(data : Buffer.Buffer<RLPType.Decoded>) : {
+    func decodeEachByte(input : [[Nat8]]) : [Nat8] {
+        let data = Array.tabulate<Nat8>(
+            input.size(),
+            func(i : Nat) : Nat8 {
+                return decodeByte(input[i]);
+            },
+        );
+        return data;
+    };
+
+    func decodeByte(input : [Nat8]) : Nat8 {
+        let info = getPrefixInfo(input);
+        switch (info) {
+            case (?{ rlpType = #shortString; prefix = 0; data = 1 }) {
+                return input[0];
+            };
+            case (?{ rlpType = #singleByte; prefix; data = 1 }) {
+                return input[prefix];
+            };
+            case (_) {
+                Debug.trap("unexpected data");
+            };
+        };
+    };
+
+    func extractNat8Arrays(data : Buffer.Buffer<RLPType.Decoded>) : {
         #ok : [[Nat8]];
         #err : Text;
     } {

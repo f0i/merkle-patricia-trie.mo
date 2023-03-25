@@ -91,4 +91,17 @@ module {
 
         return Array.freeze<Nat8>(arr);
     };
+
+    public func compactDecode(encoded : [Nat8]) : {
+        key : Key;
+        terminating : Bool;
+    } {
+        var decoded = fromKeyBytes(encoded);
+        // TODO: check size and handle error
+        let prefix = decoded[0];
+        let even = (prefix == 0) or (prefix == 2);
+        let terminating = prefix >= 2;
+        let key = slice(decoded, if (even) 2 else 1);
+        return { key; terminating };
+    };
 };

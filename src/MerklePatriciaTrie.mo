@@ -22,14 +22,24 @@ module {
   public type MerklePatriciaTrie = Node;
   public type Trie = Node;
   type Buffer = Buffer.Buffer;
+  type RlpEncoded = Buffer;
   type Nibble = Nibble.Nibble;
   type List<T> = List.List<T>;
+  type TrieMap = TrieMap.TrieMap<Hash, Node>;
 
   func print(msg : Text) {
     //Debug.print(msg);
   };
 
   public type Node = {
+    #nul;
+    #branch : Branch;
+    #leaf : Leaf;
+    #extension : Extension;
+    #hash : Buffer;
+  };
+
+  public type PartialNode = {
     #nul;
     #branch : Branch;
     #leaf : Leaf;
@@ -83,16 +93,24 @@ module {
     let path : Path = findPath(trie, key, null);
     var proof = Array.init<Buffer>(List.size(path.stack) + 1, []);
 
-    var i = 0;
+    proof[0] := nodeSerialize(path.node);
+    var i = 1;
     for ((k, node) in List.toIter(path.stack)) {
       proof[i] := nodeSerialize(node);
       i += 1;
     };
-    proof[i] := nodeSerialize(path.node);
-    return Array.freeze(proof);
+    return Array.reverse(Array.freeze(proof));
   };
 
+  func proofToText(proof : Proof) : Text {
+    Hex.toText2D(proof);
+  };
+
+  /// compare a sequence of bytes
   func hashEqual(self : Hash, other : Hash) : Bool = self == other;
+
+  /// generate a 32-bit hash form a sequence of bytes
+  /// this takes the first 4 bytes and concatenates them
   func hashHash(self : Hash) : BaseHash.Hash {
     if (Array.size(self) == 0) { return 0 };
     var out : Nat32 = Nat32.fromNat(Nat8.toNat(self[0]));
@@ -105,33 +123,74 @@ module {
   };
 
   public func verifyProof(root : Hash, key : Key, proof : Proof) : ?Value {
-    let map = TrieMap.TrieMap<Hash, Node>(hashEqual, hashHash);
+    let db = TrieMap.TrieMap<Hash, Node>(hashEqual, hashHash);
     for (item in proof.vals()) {
       let node = nodeDecode(item);
       let hash = nodeHash(node);
-      map.put(hash, node);
+      db.put(hash, node);
+      print("proof input: " # Hex.toText(item));
+      print("proof entry: " # Hex.toText(hash) # ": " # nodeToText(node));
     };
 
-    Debug.print("TODO: implement verifyProof");
+    let path = findPathWithDb(#hash(root), key, null, db);
 
-    return null;
+    //Debug.print("verifyProof: " # pathToText(path));
+
+    return nodeValue(path.node);
   };
 
-  func nodeDecode(rlpData : Buffer) : Node {
+  /// Deserialize RLP encoded node
+  public func nodeDecode(rlpData : Buffer) : Node {
     let data = RLP.decode(rlpData);
 
     switch (data) {
       case (#ok(value)) {
-        Debug.print("nodeDecode: " # Hex.toText2D(value));
+        //Debug.print("nodeDecode: " # Hex.toText2D(value));
+        if (value == []) return #nul;
+        if (value.size() == 17) return rawToBranch(value);
+        if (value.size() == 2) {
+          let { key; terminating } = Key.compactDecode(RLP.decodeValue(value[0]));
+          if (terminating) {
+            return createLeaf(key, RLP.decodeValue(value[1]));
+          } else {
+            return createExtension(key, #hash(RLP.decodeValue(value[1])));
+          };
+        };
+        // invalid data will be ignored (return #nul)
+        Debug.print("Trie.nodeDecode: invalid number of elements");
+        return #nul;
       };
       case (#err(msg)) {
         Debug.print("nodeDecode error: " # msg);
         // TODO: handle error
-        assert false;
+        return #nul;
       };
     };
+  };
 
-    return #nul;
+  func rawToBranch(raw : [Buffer]) : Node {
+    assert raw.size() == 17;
+    let branch : Branch = {
+      nodes : [Node] = Array.tabulate<Node>(
+        16,
+        func(x) : Node {
+          let hash = if (raw[x].size() >= 32) {
+            return #hash(RLP.decodeValue(raw[x]));
+          } else {
+            // RLP encoded node
+            // TODO: should this be decoded or used as a hash?
+            // currently it is used as a hash and requires an separate lookup
+            // this will reduce computation overhead if proof is not verified,
+            // but might require more lookups when verifying, potentially: TODO: performance test?
+            raw[x];
+          };
+          return #hash(raw[x]);
+        },
+      );
+      value : ?Value = ?RLP.decodeValue(raw[16]);
+      hash : Hash = [];
+    };
+    return #branch(branch);
   };
 
   public func delete(trie : Trie, key : Key) : Trie {
@@ -177,6 +236,9 @@ module {
     // insert leaf
     var replacementNode : Node = switch (stuckOn) {
       case (#nul) { createLeaf(remaining, value) };
+      case (#hash(hash)) {
+        Debug.trap("Trie.put: stuck on #hash-node. This can never happen on a full trie created only by using the Trie.put function!");
+      };
       case (#branch branch) {
         // replace existing
         if (remaining != []) Debug.trap("Can't get stuck on a branch with non empty key: " # Key.toText(remaining));
@@ -322,7 +384,7 @@ module {
     };
   };
 
-  func createLeaf(key : Key, value : Value) : Node {
+  public func createLeaf(key : Key, value : Value) : Node {
     let hash : Hash = []; // TODO: implement
     return #leaf { key; value; hash };
   };
@@ -353,19 +415,29 @@ module {
       case (#branch(branch)) { branch.value };
       case (#leaf(leaf)) { ?leaf.value };
       case (#extension(ext)) { null };
+      case (#hash hash) { null };
     };
   };
 
-  // Function `H(x)` where `x` is `RLP(node)` and `H(x) = keccak256(x) if len(x) >= 32 else x`
+  /// Function `H(x)` where `x` is `RLP(node)` and `H(x) = keccak256(x) if len(x) >= 32 else x`
   func nodeHash(node : Node) : Hash {
+    switch (node) {
+      case (#hash(hash)) { return hash };
+      case (_) {};
+    };
+
     let serial = nodeSerialize(node);
     print("serialized: " # Hex.toText(serial));
     return hashIfLong(serial);
   };
 
+  /// Get an array of encoded elements
   func nodeRaw(node : Node) : [Buffer] {
     switch (node) {
       case (#nul) { [] };
+      case (#hash(hash)) {
+        [RLP.encodeHash(hash)];
+      };
       case (#branch(branch)) {
         let raw = Array.init<Buffer>(17, [0x80]);
         for (i in Iter.range(0, 15)) {
@@ -386,9 +458,15 @@ module {
     };
   };
 
-  func nodeSerialize(node : Node) : Buffer {
-    print("nodeSerialize: " # Hex.toText2D(nodeRaw(node)));
-    RLP.encodeOuter(nodeRaw(node));
+  public func nodeSerialize(node : Node) : Buffer {
+    let raw = nodeRaw(node);
+    print("nodeSerialize: " # Hex.toText2D(raw));
+    if (raw.size() == 1) {
+      // value or hash
+      return raw[0];
+    } else {
+      RLP.encodeOuter(nodeRaw(node));
+    };
   };
 
   func hashIfLong(data : Buffer) : Buffer {
@@ -434,6 +512,9 @@ module {
 
     switch (node) {
       case (#nul) { return noMatch };
+      case (#hash hash) {
+        return { node; stack; remaining = key };
+      };
       case (#leaf leaf) {
         if (leaf.key == key) {
           // matchin leaf
@@ -473,13 +554,28 @@ module {
     };
   };
 
-  func serialize(node : Node) : [Buffer] {
-    return []; //TODO: implement
+  public func findPathWithDb(node : Node, key : Key, stack : List<(Key, Node)>, db : TrieMap) : Path {
+    var path = findPath(node, key, stack);
+
+    switch (path) {
+      case ({ node = #hash(hash); remaining; stack }) {
+        switch (db.get(hash)) {
+          case (?node) { return findPathWithDb(node, remaining, stack, db) };
+          case (null) {
+            return path;
+          };
+        };
+      };
+      case (_) {
+        return path;
+      };
+    };
   };
 
   public func nodeToText(node : Node) : Text {
     switch (node) {
       case (#nul) { "<>" };
+      case (#hash(hash)) { Hex.toText(hash) };
       case (#branch(branch)) {
         let branches = Array.map(branch.nodes, nodeToText);
         switch (branch.value) {

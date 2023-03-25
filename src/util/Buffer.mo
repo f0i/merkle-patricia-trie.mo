@@ -21,7 +21,7 @@ module {
 
     public func fromHex(hex : Text) : ?Buffer {
         switch (Hex.toArray(hex)) {
-            case (#ok(value)) { ?Array.freeze(value) };
+            case (#ok(value)) { ?value };
             case (#err(error)) { null };
         };
     };

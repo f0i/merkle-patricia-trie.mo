@@ -24,7 +24,7 @@ module {
         return "[" # Text.join(", ", texts.vals()) # "]";
     };
 
-    public func toArray(hex : Text) : Result.Result<[var Nat8], Text> {
+    public func toArray(hex : Text) : Result.Result<[Nat8], Text> {
         let chars = hex.size();
 
         let size = if (chars % 2 == 0) { chars / 2 } else { chars / 2 + 1 };
@@ -40,7 +40,7 @@ module {
             };
             i += 1;
         };
-        return #ok arr;
+        return #ok(Array.freeze(arr));
     };
 
     func decodeNibble(c : Char) : ?Nat8 {

@@ -10,6 +10,8 @@ import Nibble "../../src/util/Nibble";
 import Array "mo:base/Array";
 import Value "../../src/util/Value";
 import Iter "mo:base/Iter";
+import Hex "../../src/util/Hex";
+import Util "../../src/util";
 
 module {
 
@@ -190,6 +192,11 @@ module {
             //Debug.print(Trie.hashHex(#branch branch));
             assert (Trie.hashHex(#branch branch)) == "5798fa3858f12926c10e79dfae7fc774672634926d378c404d3ded09465f6866";
 
+            test "#hash";
+            let bytes = Util.unwrap(Hex.toArray("5798fa3858f12926c10e79dfae7fc774672634926d378c404d3ded09465f6866"));
+            let hash : Trie.Node = #hash(bytes);
+            assert (Trie.hashHex(hash)) == "5798fa3858f12926c10e79dfae7fc774672634926d378c404d3ded09465f6866";
+
         };
 
         section "Hashes";
@@ -236,6 +243,7 @@ module {
 
             test "keep short rlp encoded values, hash long values";
             let hashes = [
+                // reference hashes were generated using the ethereumjs trie library
                 "e8e4a30ec58b7b915b4c7f7276663b95a1bd725ea0ea378d8da55956ebb6692d",
                 "1b5614127f3503831daadeefc30499f27edd18b7376df2b027dd40c81f7d7e66",
                 "fa1f0b535e834b2f869728ce13396be068205e4eb7e100933b804479b2465870",

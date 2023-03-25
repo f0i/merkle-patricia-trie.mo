@@ -8,4 +8,12 @@ module Test {
     public func section(title : Text) = Debug.print("\n##" # " " # title # "\n");
 
     public func test(name : Text) = Debug.print("- " # name);
+
+    public func done() {
+        chapter "Test result";
+        Debug.print("    ┌─────────────────────╖");
+        Debug.print("    │ ✅ All tests passed ║");
+        Debug.print("    ╘═════════════════════╝");
+        Debug.print("");
+    };
 };
