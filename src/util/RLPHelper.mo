@@ -11,6 +11,7 @@ import RLP "rlp/encode";
 import RLPDecode "mo:rlp/rlp/decode";
 import RLPType "mo:rlp/types";
 import Hex "Hex";
+import Int "mo:base/Int";
 
 module {
 
@@ -92,7 +93,7 @@ module {
             case (?{ rlpType = #singleByte }) {
                 Debug.trap("decodeValue: unexpected RLP type: #singleByte");
             };
-            case (null) { Debug.trap("decodeValue: unexpected RLP type: null") };
+            case (null) { Debug.trap("decodeValue: could not get RLP info") };
         };
     };
 
@@ -247,7 +248,8 @@ module {
                 return ?{ rlpType; prefix = 1; data = prefix - 0x80 };
             };
             case (#longString) {
-                let lengthLength = prefix - 0xb7;
+                let lengthLength = Int.abs(prefix - 0xb7); // Int.abs is here to prevent warning about possible trap
+                if (encodedData.size() >= (1 + lengthLength)) return null;
                 var length = 0;
                 for (i in Iter.range(1, lengthLength)) {
                     length *= 0x100;
@@ -259,7 +261,8 @@ module {
                 return ?{ rlpType; prefix = 1; data = prefix - 0xc0 };
             };
             case (#longList) {
-                let lengthLength = prefix - 0xf7;
+                let lengthLength = Int.abs(prefix - 0xf7);
+                if (encodedData.size() >= (1 + lengthLength)) return null;
                 var length = 0;
                 for (i in Iter.range(1, lengthLength)) {
                     length *= 0x100;

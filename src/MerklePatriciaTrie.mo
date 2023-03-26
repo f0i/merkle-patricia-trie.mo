@@ -128,13 +128,15 @@ module {
       let node = nodeDecode(item);
       let hash = nodeHash(node);
       db.put(hash, node);
-      print("proof input: " # Hex.toText(item));
-      print("proof entry: " # Hex.toText(hash) # ": " # nodeToText(node));
+      //Debug.print("proof input: " # Hex.toText(item));
+      //Debug.print("proof entry: " # Hex.toText(hash) # ": " # nodeToText(node));
     };
 
     let path = findPathWithDb(#hash(root), key, null, db);
 
     //Debug.print("verifyProof: " # pathToText(path));
+
+    if (path.remaining.size() > 0) return null;
 
     return nodeValue(path.node);
   };
@@ -337,8 +339,10 @@ module {
 
   func createBranch(a : Key, nodeA : Node, b : Key, nodeB : Node) : Node {
     var nodes = Array.init<Node>(16, #nul);
-    nodes[Key.toIndex(a)] := nodeA;
-    nodes[Key.toIndex(b)] := nodeB;
+    let indexA = Key.toIndex(a);
+    let indexB = Key.toIndex(b);
+    nodes[indexA] := nodeA;
+    nodes[indexB] := nodeB;
 
     #branch {
       nodes = Array.freeze(nodes);
@@ -500,9 +504,6 @@ module {
   /// returned as `stack` and the rest of the key will be returned as `remaining`.
   public func findPath(node : Node, key : Key, stack : List<(Key, Node)>) : Path {
     // no key, return node and include it in stack unless it's #nul
-    if (key == [] and node != #nul) {
-      return { node; stack; remaining = [] };
-    };
 
     let noMatch = {
       node = #nul;
@@ -527,6 +528,9 @@ module {
         return { node = #nul; stack; remaining = key };
       };
       case (#branch branch) {
+        if (key == []) {
+          return { node; stack; remaining = [] };
+        };
         let index = Key.toIndex(key);
         let path = findPath(branch.nodes[index], Key.slice(key, 1), ?((key, node), stack));
         return path;
@@ -556,6 +560,8 @@ module {
 
   public func findPathWithDb(node : Node, key : Key, stack : List<(Key, Node)>, db : TrieMap) : Path {
     var path = findPath(node, key, stack);
+
+    //Debug.print("findPathWithDB: " # Key.toText(key) # " in " # nodeToText(node) # " -> " # pathToText(path));
 
     switch (path) {
       case ({ node = #hash(hash); remaining; stack }) {
