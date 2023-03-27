@@ -151,11 +151,25 @@ module {
         if (value == []) return #nul;
         if (value.size() == 17) return rawToBranch(value);
         if (value.size() == 2) {
-          let { key; terminating } = Key.compactDecode(RLP.decodeValue(value[0]));
+          let compactKey = switch (RLP.decodeValue(value[0])) {
+            case (#ok(value)) { value };
+            case (#err(msg)) {
+              Debug.print("nodeDecode: decode key " # msg # " " # Hex.toText(value[0]));
+              return #nul;
+            }; // ignore invalid encoded values
+          };
+          let { key; terminating } = Key.compactDecode(compactKey);
+          let hashOrValue = switch (RLP.decodeValue(value[1])) {
+            case (#ok(value)) { value };
+            case (#err(msg)) {
+              Debug.print("nodeDecode: value: " # msg # " " # Hex.toText(value[0]));
+              return #nul;
+            }; // ignore invalid encoded values
+          };
           if (terminating) {
-            return createLeaf(key, RLP.decodeValue(value[1]));
+            return createLeaf(key, hashOrValue);
           } else {
-            return createExtension(key, #hash(RLP.decodeValue(value[1])));
+            return createExtension(key, #hash(hashOrValue));
           };
         };
         // invalid data will be ignored (return #nul)
@@ -163,7 +177,7 @@ module {
         return #nul;
       };
       case (#err(msg)) {
-        Debug.print("nodeDecode error: " # msg);
+        Debug.print("nodeDecode error: outer " # msg # " " # Hex.toText(rlpData));
         // TODO: handle error
         return #nul;
       };
@@ -172,24 +186,39 @@ module {
 
   func rawToBranch(raw : [Buffer]) : Node {
     assert raw.size() == 17;
+
+    var nodes = Array.init<Node>(16, #nul);
+
+    for (i in Iter.range(0, 15)) {
+      if (raw[i].size() >= 32) {
+        switch (RLP.decodeValue(raw[i])) {
+          case (#ok(value)) { nodes[i] := #hash(value) };
+          case (#err(msg)) {
+            Debug.print("rawToBranch: error decoding node " # msg);
+            return #nul;
+          }; // TODO? change to `return #err(msg)`
+        };
+      } else {
+        // RLP encoded node
+        // TODO: should this be decoded or used as a hash?
+        // currently it is used as a hash and requires an separate lookup
+        // this will reduce computation overhead if proof is not verified,
+        // but might require more lookups when verifying, potentially: TODO: performance test?
+        nodes[i] := #hash(raw[i]);
+      };
+    };
+
+    let value = switch (RLP.decodeValue(raw[16])) {
+      case (#ok(value)) { value };
+      case (#err(msg)) {
+        Debug.print("rawToBranch: error decoding value " # msg);
+        return #nul;
+      }; // TODO? change to `return #err(msg)`
+    };
+
     let branch : Branch = {
-      nodes : [Node] = Array.tabulate<Node>(
-        16,
-        func(x) : Node {
-          let hash = if (raw[x].size() >= 32) {
-            return #hash(RLP.decodeValue(raw[x]));
-          } else {
-            // RLP encoded node
-            // TODO: should this be decoded or used as a hash?
-            // currently it is used as a hash and requires an separate lookup
-            // this will reduce computation overhead if proof is not verified,
-            // but might require more lookups when verifying, potentially: TODO: performance test?
-            raw[x];
-          };
-          return #hash(raw[x]);
-        },
-      );
-      value : ?Value = ?RLP.decodeValue(raw[16]);
+      nodes = Array.freeze(nodes);
+      value : ?Value = ?value;
       hash : Hash = [];
     };
     return #branch(branch);

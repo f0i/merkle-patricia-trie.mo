@@ -18,6 +18,7 @@ module {
     type Buffer = Buffer.Buffer<Nat8>;
     type InternalResult = Result.Result<Buffer, Text>;
     type EncodeResult = Result.Result<[Nat8], Text>;
+    type Result<T, E> = Result.Result<T, E>;
 
     // RLP encode an hash. If the "hash" is shorter, it is the already RLP encoded subtree
     public func encodeHash(array : [Nat8]) : [Nat8] {
@@ -60,14 +61,14 @@ module {
         return Buffer.toArray(output);
     };
 
-    public func decodeValue(input : [Nat8]) : [Nat8] {
+    public func decodeValue(input : [Nat8]) : Result<[Nat8], Text> {
         if (input == [0x80]) {
-            return []; // RLP encoded empty array
+            return #ok([]); // RLP encoded empty array
         };
         let info = getPrefixInfo(input);
         switch (info) {
             case (?{ rlpType = #shortString; data; prefix }) {
-                return Util.dropBytes(input, prefix);
+                return #ok(Util.dropBytes(input, prefix));
             };
             case (?{ rlpType = #shortList; data; prefix }) {
                 let remaining = Util.dropBytes(input, prefix);
@@ -76,24 +77,26 @@ module {
                     case (#err(msg)) { Debug.trap("decodeValue error: " # msg) };
                 };
 
-                return decodeEachByte(encodedInner);
+                return #ok(decodeEachByte(encodedInner));
             };
             case (?{ rlpType = #longList; data; prefix }) {
                 let remaining = Util.dropBytes(input, prefix);
                 let encodedInner : [[Nat8]] = switch (splitMultiple(remaining)) {
                     case (#ok(data)) { data };
-                    case (#err(msg)) { Debug.trap("decodeValue error: " # msg) };
+                    case (#err(msg)) {
+                        return #err("decodeValue error: " # msg);
+                    };
                 };
 
-                return decodeEachByte(encodedInner);
+                return #ok(decodeEachByte(encodedInner));
             };
             case (?{ rlpType = #longString }) {
-                Debug.trap("decodeValue: unexpected RLP type: #longString");
+                #err("decodeValue: unexpected RLP type: #longString");
             };
             case (?{ rlpType = #singleByte }) {
-                Debug.trap("decodeValue: unexpected RLP type: #singleByte");
+                #err("decodeValue: unexpected RLP type: #singleByte");
             };
-            case (null) { Debug.trap("decodeValue: could not get RLP info") };
+            case (null) { #err("decodeValue: could not get RLP info") };
         };
     };
 
@@ -120,7 +123,18 @@ module {
                 let remaining = Util.dropBytes(input, prefix);
                 return splitMultiple(remaining);
             };
-            case (_) { return #err("RPL.decode error: unexpected RLP type") };
+            case (?{ rlpType = #singleByte; data; prefix }) {
+                return #err("RPL.decode error: unexpected RLP type #singleByte");
+            };
+            case (?{ rlpType = #shortString; data; prefix }) {
+                return #err("RPL.decode error: unexpected RLP type #shortString");
+            };
+            case (?{ rlpType = #longString; data; prefix }) {
+                return #err("RPL.decode error: unexpected RLP type #longString");
+            };
+            case (null) {
+                return #err("RPL.decode error: unexpected RLP type null");
+            };
         };
     };
 
@@ -249,7 +263,7 @@ module {
             };
             case (#longString) {
                 let lengthLength = Int.abs(prefix - 0xb7); // Int.abs is here to prevent warning about possible trap
-                if (encodedData.size() >= (1 + lengthLength)) return null;
+                // TODO: check data size
                 var length = 0;
                 for (i in Iter.range(1, lengthLength)) {
                     length *= 0x100;
@@ -262,7 +276,7 @@ module {
             };
             case (#longList) {
                 let lengthLength = Int.abs(prefix - 0xf7);
-                if (encodedData.size() >= (1 + lengthLength)) return null;
+                // TODO: check data size
                 var length = 0;
                 for (i in Iter.range(1, lengthLength)) {
                     length *= 0x100;

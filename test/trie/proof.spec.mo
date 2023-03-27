@@ -103,15 +103,14 @@ module {
             test "test an invalid exclusion proof by creating a valid exclusion proof then making it non-null";
             myKey := Key.fromText("anyrandomkey");
             proof := Trie.createProof(trie, myKey);
-            //TODO: traps: val := Trie.verifyProof(root, myKey, proof);
+            val := Trie.verifyProof(root, myKey, proof);
             assert val == null;
 
             test "now make the key non-null so the exclusion proof becomes invalid";
             trie := Trie.put(trie, myKey, Buffer.fromText("thisisavalue"));
             root := Trie.hash(trie);
 
-            //TODO: traps: unexpected RLP type: #singleByte
-            //val := Trie.verifyProof(root, myKey, proof);
+            val := Trie.verifyProof(root, myKey, proof);
             assert val == null; // TODO: #err("Invalid proof provided");
         };
 
