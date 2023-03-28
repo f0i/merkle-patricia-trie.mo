@@ -67,6 +67,10 @@ module {
         };
         let info = getPrefixInfo(input);
         switch (info) {
+            case (?{ rlpType = #singleByte; prefix; data }) {
+                assert data == 1;
+                return #ok([input[prefix]]);
+            };
             case (?{ rlpType = #shortString; data; prefix }) {
                 return #ok(Util.dropBytes(input, prefix));
             };
@@ -92,9 +96,6 @@ module {
             };
             case (?{ rlpType = #longString }) {
                 #err("decodeValue: unexpected RLP type: #longString");
-            };
-            case (?{ rlpType = #singleByte }) {
-                #err("decodeValue: unexpected RLP type: #singleByte");
             };
             case (null) { #err("decodeValue: could not get RLP info") };
         };
