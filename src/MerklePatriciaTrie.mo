@@ -91,14 +91,25 @@ module {
 
   public func createProof(trie : Trie, key : Key) : Proof {
     let path : Path = findPath(trie, key, null);
-    var proof = Array.init<Buffer>(List.size(path.stack) + 1, []);
+    let stackSize = List.size(path.stack);
+    var size = stackSize + 1;
+    if (size <= 1) {
+      size := 2;
+    };
+    var proof = Array.init<Buffer>(size, []);
 
     proof[0] := nodeSerialize(path.node);
-    var i = 1;
-    for ((k, node) in List.toIter(path.stack)) {
-      proof[i] := nodeSerialize(node);
-      i += 1;
+    if (stackSize == 0) {
+      proof[1] := nodeSerialize(trie);
+    } else {
+
+      var i = 1;
+      for ((k, node) in List.toIter(path.stack)) {
+        proof[i] := nodeSerialize(node);
+        i += 1;
+      };
     };
+
     return Array.reverse(Array.freeze(proof));
   };
 
@@ -122,7 +133,13 @@ module {
     return out + Nat32.fromNat(Nat8.toNat(self[3]));
   };
 
-  public func verifyProof(root : Hash, key : Key, proof : Proof) : ?Value {
+  public type ProofResult = {
+    #included : Value;
+    #excluded;
+    #invalidProof;
+  };
+
+  public func verifyProof(root : Hash, key : Key, proof : Proof) : ProofResult {
     let db = TrieMap.TrieMap<Hash, Node>(hashEqual, hashHash);
     for (item in proof.vals()) {
       let node = nodeDecode(item);
@@ -136,9 +153,18 @@ module {
 
     //Debug.print("verifyProof: " # pathToText(path));
 
-    if (path.remaining.size() > 0) return null;
+    if (path.remaining.size() > 0) {
+      switch (path.node) {
+        case (#hash(_)) { return #invalidProof };
+        // TODO: check if proof is invalid or an exclusion proof
+        case (_) { return #excluded };
+      };
+    };
 
-    return nodeValue(path.node);
+    switch (nodeValue(path.node)) {
+      case (null) { return #excluded };
+      case (?value) { return #included(value) };
+    };
   };
 
   /// Deserialize RLP encoded node

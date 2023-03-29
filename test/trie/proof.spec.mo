@@ -58,39 +58,41 @@ module {
 
             test "verify proofs";
             var val = Trie.verifyProof(root, Key.fromText("key2bb"), proof);
-            assert val == ?(Buffer.fromText("aval2"));
+            assert val == #included(Buffer.fromText("aval2"));
 
             proof := Trie.createProof(trie, Key.fromText("key1aa"));
             val := Trie.verifyProof(root, Key.fromText("key1aa"), proof);
-            assert val == ?(Buffer.fromText("0123456789012345678901234567890123456789xx"));
+            assert val == #included(Buffer.fromText("0123456789012345678901234567890123456789xx"));
 
             test "Expected value at 'key2' to be null";
             proof := Trie.createProof(trie, Key.fromText("key2bb"));
             val := Trie.verifyProof(root, Key.fromText("key2"), proof);
             // In this case, the proof _happens_ to contain enough nodes to prove `key2` because
             // traversing into `key2bb` would touch all the same nodes as traversing into `key2`
-            assert val == null;
+            assert val == #excluded;
 
             test "Expected value for a random key to be null";
             var myKey = Key.fromText("anyrandomkey");
             proof := Trie.createProof(trie, myKey);
+            Debug.print("proof: " # Hex.toText2D(proof));
+            // TODO: compare with js
             val := Trie.verifyProof(root, myKey, proof);
-            assert val == null;
+            assert val == #excluded;
 
             test "extra nodes are just ignored";
             myKey := Key.fromText("anothergarbagekey"); // should generate a valid proof of null
             proof := Trie.createProof(trie, myKey);
             proof := Array.append(proof, [Buffer.fromText("123456")]); // extra nodes are just ignored
             val := Trie.verifyProof(root, myKey, proof);
-            assert val == null;
+            assert val == #excluded;
 
             trie := Trie.put(trie, Key.fromText("another"), Buffer.fromText("3498h4riuhgwe"));
             root := Trie.hash(trie);
 
             test "to fail our proof we can request a proof for one key, and try to use that proof on another key";
             proof := Trie.createProof(trie, Key.fromText("another"));
-            //TODO: traps: val := Trie.verifyProof(root, Key.fromText("key1aa"), proof);
-            assert val == null; // TODO: #err("Invalid proof provided");
+            val := Trie.verifyProof(root, Key.fromText("key1aa"), proof);
+            assert val == #invalidProof;
 
             test "we can also corrupt a valid proof";
             proof := Trie.createProof(trie, Key.fromText("key2bb"));
@@ -98,20 +100,20 @@ module {
             p[0] := Array.reverse(p[0]);
             proof := Array.freeze(p);
             val := Trie.verifyProof(root, Key.fromText("key2bb"), proof);
-            assert val == null; // TODO: #err("Invalid proof provided");
+            assert val == #invalidProof;
 
-            test "test an invalid exclusion proof by creating a valid exclusion proof then making it non-null";
+            test "test an invalid exclusion proof by creating a valid exclusion proof (and later making it non-null)";
             myKey := Key.fromText("anyrandomkey");
             proof := Trie.createProof(trie, myKey);
             val := Trie.verifyProof(root, myKey, proof);
-            assert val == null;
+            assert val == #excluded;
 
             test "now make the key non-null so the exclusion proof becomes invalid";
             trie := Trie.put(trie, myKey, Buffer.fromText("thisisavalue"));
             root := Trie.hash(trie);
 
             val := Trie.verifyProof(root, myKey, proof);
-            assert val == null; // TODO: #err("Invalid proof provided");
+            assert val == #invalidProof;
         };
 
     };
