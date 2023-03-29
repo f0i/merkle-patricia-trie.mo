@@ -44,6 +44,7 @@ module {
                 node = #nul;
                 remaining = key;
                 stack = null;
+                mismatch = trie;
             };
 
             test "get existing path with branch";

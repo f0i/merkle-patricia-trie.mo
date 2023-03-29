@@ -93,21 +93,21 @@ module {
     let path : Path = findPath(trie, key, null);
     let stackSize = List.size(path.stack);
     var size = stackSize + 1;
-    if (size <= 1) {
-      size := 2;
+    if (path.mismatch != #nul) {
+      size += 1;
     };
     var proof = Array.init<Buffer>(size, []);
 
-    proof[0] := nodeSerialize(path.node);
-    if (stackSize == 0) {
-      proof[1] := nodeSerialize(trie);
+    if (path.remaining == []) {
+      proof[0] := nodeSerialize(path.node);
     } else {
+      proof[0] := nodeSerialize(path.mismatch);
+    };
 
-      var i = 1;
-      for ((k, node) in List.toIter(path.stack)) {
-        proof[i] := nodeSerialize(node);
-        i += 1;
-      };
+    var i = 1;
+    for ((k, node) in List.toIter(path.stack)) {
+      proof[i] := nodeSerialize(node);
+      i += 1;
     };
 
     return Array.reverse(Array.freeze(proof));
@@ -553,6 +553,8 @@ module {
     stack : List<(Key, Node)>;
     // Part of the key not consumed by stack and node
     remaining : Key;
+    // first mismatch
+    mismatch : Node;
   };
   /// Find the a path in a node and return the path to get there.
   /// If no node was found at the given key, the part that exists will be
@@ -560,16 +562,17 @@ module {
   public func findPath(node : Node, key : Key, stack : List<(Key, Node)>) : Path {
     // no key, return node and include it in stack unless it's #nul
 
-    let noMatch = {
+    func noMatch(mismatch : Node) : Path = {
       node = #nul;
       stack;
       remaining = key;
+      mismatch;
     };
 
     switch (node) {
-      case (#nul) { return noMatch };
+      case (#nul) { return noMatch(#nul) };
       case (#hash hash) {
-        return { node; stack; remaining = key };
+        return { node; stack; remaining = key; mismatch = #nul };
       };
       case (#leaf leaf) {
         if (leaf.key == key) {
@@ -578,13 +581,14 @@ module {
             node = node;
             stack = stack;
             remaining = [];
+            mismatch = #nul;
           };
         };
-        return { node = #nul; stack; remaining = key };
+        return { node = #nul; stack; remaining = key; mismatch = #leaf(leaf) };
       };
       case (#branch branch) {
         if (key == []) {
-          return { node; stack; remaining = [] };
+          return { node; stack; remaining = []; mismatch = #nul };
         };
         let index = Key.toIndex(key);
         let path = findPath(branch.nodes[index], Key.slice(key, 1), ?((key, node), stack));
@@ -592,12 +596,12 @@ module {
       };
       case (#extension ext) {
         if (key.size() < ext.key.size()) {
-          return noMatch;
+          return noMatch(node);
         };
 
         let same = Nibble.matchingNibbleLength(key, ext.key);
         if (same < ext.key.size()) {
-          return noMatch;
+          return noMatch(node);
         };
 
         if (same == key.size()) {
@@ -605,6 +609,7 @@ module {
             node = ext.node;
             stack = ?((key, node), stack);
             remaining = [];
+            mismatch = #nul;
           };
         };
         // extention is part of key
