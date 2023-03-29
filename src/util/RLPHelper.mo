@@ -61,6 +61,22 @@ module {
         return Buffer.toArray(output);
     };
 
+    public func decodeHash(input : [Nat8]) : Result<[Nat8], Text> {
+        if (input == [0x80]) {
+            return #ok([]); // RLP encoded empty array
+        };
+        let info = getPrefixInfo(input);
+        switch (info) {
+            case (?{ rlpType = #shortString; prefix; data = 32 }) {
+                let hash = Util.dropBytes(input, prefix);
+                return #ok(hash);
+            };
+            case (_) {
+                return #ok(input);
+            };
+        };
+    };
+
     public func decodeValue(input : [Nat8]) : Result<[Nat8], Text> {
         if (input == [0x80]) {
             return #ok([]); // RLP encoded empty array
@@ -74,28 +90,14 @@ module {
             case (?{ rlpType = #shortString; data; prefix }) {
                 return #ok(Util.dropBytes(input, prefix));
             };
+            case (?{ rlpType = #longString; data; prefix }) {
+                return #ok(Util.dropBytes(input, prefix));
+            };
             case (?{ rlpType = #shortList; data; prefix }) {
-                let remaining = Util.dropBytes(input, prefix);
-                let encodedInner : [[Nat8]] = switch (splitMultiple(remaining)) {
-                    case (#ok(data)) { data };
-                    case (#err(msg)) { Debug.trap("decodeValue error: " # msg) };
-                };
-
-                return #ok(decodeEachByte(encodedInner));
+                return #ok(input);
             };
             case (?{ rlpType = #longList; data; prefix }) {
-                let remaining = Util.dropBytes(input, prefix);
-                let encodedInner : [[Nat8]] = switch (splitMultiple(remaining)) {
-                    case (#ok(data)) { data };
-                    case (#err(msg)) {
-                        return #err("decodeValue error: " # msg);
-                    };
-                };
-
-                return #ok(decodeEachByte(encodedInner));
-            };
-            case (?{ rlpType = #longString }) {
-                #err("decodeValue: unexpected RLP type: #longString");
+                return #ok(input);
             };
             case (null) { #err("decodeValue: could not get RLP info") };
         };

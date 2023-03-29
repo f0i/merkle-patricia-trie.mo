@@ -9,11 +9,6 @@ module {
 
     public type Buffer = [Nat8];
 
-    // TODO: rename to init, alloc is from js
-    public func alloc(size : Nat) : Buffer {
-        return Array.freeze(Array.init<Nat8>(size, 0));
-    };
-
     public func fromText(text : Text) : Buffer {
         let encoded = Text.encodeUtf8(text);
         return Blob.toArray(encoded);

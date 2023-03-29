@@ -141,21 +141,31 @@ module {
 
   public func verifyProof(root : Hash, key : Key, proof : Proof) : ProofResult {
     let db = TrieMap.TrieMap<Hash, Node>(hashEqual, hashHash);
+    print("root hash: " # Hex.toText(root));
     for (item in proof.vals()) {
       let node = nodeDecode(item);
-      let hash = nodeHash(node);
-      db.put(hash, node);
-      //Debug.print("proof input: " # Hex.toText(item));
-      //Debug.print("proof entry: " # Hex.toText(hash) # ": " # nodeToText(node));
+      let hash1 = nodeHash(node);
+      db.put(hash1, node);
+      print("proof input: " # Hex.toText(item));
+      print("proof entry: " # Hex.toText(hash1) # ": " # nodeToText(node));
+      if (hash1.size() < 32) {
+        let hash2 = rootHash(node);
+        db.put(hash2, node);
+        print("proof entry: " # Hex.toText(hash2) # ": " # nodeToText(node));
+      };
     };
 
     let path = findPathWithDb(#hash(root), key, null, db);
 
-    //Debug.print("verifyProof: " # pathToText(path));
+    print("verifyProof: " # pathToText(path));
 
     if (path.remaining.size() > 0) {
       switch (path.node) {
-        case (#hash(_)) { return #invalidProof };
+        case (#hash(hash)) {
+          print("invalid proof path: " # pathToText(path));
+          return #invalidProof
+
+        };
         // TODO: check if proof is invalid or an exclusion proof
         case (_) { return #excluded };
       };
@@ -164,6 +174,14 @@ module {
     switch (nodeValue(path.node)) {
       case (null) { return #excluded };
       case (?value) { return #included(value) };
+    };
+  };
+
+  public func proofResultToText(val : ProofResult) : Text {
+    switch (val) {
+      case (#included(value)) { "#included(" # Hex.toText(value) # ")" };
+      case (#excluded) { "#excluded" };
+      case (#invalidProof) { "#invalidProof" };
     };
   };
 
@@ -188,7 +206,7 @@ module {
           let hashOrValue = switch (RLP.decodeValue(value[1])) {
             case (#ok(value)) { value };
             case (#err(msg)) {
-              Debug.print("nodeDecode: value: " # msg # " " # Hex.toText(value[0]));
+              Debug.print("nodeDecode: failed for value: " # msg # " " # Hex.toText(value[0]));
               return #nul;
             }; // ignore invalid encoded values
           };
@@ -313,6 +331,10 @@ module {
           // branch(leaf.value)->new
           let newLeaf = createLeaf(Key.slice(remaining, 1), value);
           createBranchWithValue(remaining, newLeaf, leaf.value);
+        } else if (remaining == []) {
+          // branch(new.value)->leaf
+          let oldLeaf = createLeaf(Key.slice(leaf.key, 1), leaf.value);
+          createBranchWithValue(leaf.key, oldLeaf, value);
         } else if (matching == 0) {
           // branch->leaf/new
           let newLeaf = createLeaf(Key.slice(remaining, 1), value);
@@ -536,14 +558,16 @@ module {
     };
   };
 
-  public func hash(trie : Trie) : Hash = nodeHash(trie);
-
-  public func hashHex(trie : Trie) : Text {
+  public func rootHash(trie : Trie) : Hash {
     var bytes = nodeHash(trie);
     if (bytes.size() < 32) {
       bytes := Keccak.keccak(bytes);
     };
-    return Hex.toText(bytes);
+    return bytes;
+  };
+
+  public func hashHex(trie : Trie) : Text {
+    return Hex.toText(rootHash(trie));
   };
 
   public type Path = {
