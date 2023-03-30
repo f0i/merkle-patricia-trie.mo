@@ -1,6 +1,3 @@
-import { describe; it; itp; equal; Suite } = "mo:testing/SuiteState";
-import T "mo:testing/SuiteState";
-
 import { section; test } = "../Test";
 
 import Nibble "../../src/util/Nibble";

@@ -25,19 +25,6 @@ module {
         Nibble.fromArray(bytes);
     };
 
-    /// Convert a buffer into a key by applying RPL and Keccak
-    public func fromBuffer(buffer : Buffer) : Result<Key, Text> {
-        let bBuffer = BaseBuffer.fromArray<Nat8>(buffer);
-        let rpl_encoded = switch (RLP.encode(#Uint8Array bBuffer)) {
-            case (#ok(value)) { BaseBuffer.toArray(value) };
-            case (#err(error)) { return #err("RPL error:" # error) };
-        };
-
-        var sha = SHA3.Keccak(256);
-        sha.update(rpl_encoded);
-        return #ok(Nibble.fromArray(sha.finalize()));
-    };
-
     public func fromKeyBytes(bytes : [Nat8]) : Key {
         return Nibble.fromArray(bytes);
     };

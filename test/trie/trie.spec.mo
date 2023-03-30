@@ -22,10 +22,7 @@ module {
     type Nibble = Nibble.Nibble;
 
     func testKey() : Key {
-        switch (Key.fromBuffer([0])) {
-            case (#ok key) { key };
-            case (_) { Debug.trap("Failed to get key") };
-        };
+        Key.fromText("key1");
     };
 
     public func basicTests() {

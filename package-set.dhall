@@ -3,11 +3,6 @@ let upstream = https://github.com/dfinity/vessel-package-set/releases/download/m
 let Package = { name : Text, version : Text, repo : Text, dependencies : List Text }
 
 let additions = [
-  { name = "testing"
-  , version = "v0.1.2"
-  , repo = "https://github.com/internet-computer/testing"
-  , dependencies = [] : List Text
-  },
   { name = "rlp"
   , version = "master"
   , repo = "https://github.com/relaxed04/rlp-motoko"

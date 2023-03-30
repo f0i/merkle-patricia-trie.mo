@@ -1,7 +1,7 @@
-import { section; test } = "../../Test";
+import { section; test } = "../Test";
 
-import Nibble "../../../src/util/Nibble";
-import Key "../../../src/trie/Key";
+import Nibble "../../src/util/Nibble";
+import Key "../../src/trie/Key";
 import Debug "mo:base/Debug";
 
 module {
@@ -12,16 +12,6 @@ module {
     public func tests() {
         section "Key";
         do {
-
-            test "from Buffer";
-            do {
-                let arr : [Nat8] = [10, 20, 30, 40];
-                let expected : [Nat8] = [215, 104, 48, 20, 158, 180, 22, 198, 77, 31, 199, 153, 0, 125, 94, 231, 29, 50, 121, 152, 186, 107, 57, 69, 193, 165, 9, 209, 18, 73, 158, 20];
-                switch (Key.fromBuffer(arr)) {
-                    case (#ok(expected)) { assert true };
-                    case (_) { assert false };
-                };
-            };
 
             test "slice";
             do {
