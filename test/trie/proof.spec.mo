@@ -74,8 +74,7 @@ module {
             test "Expected value for a random key to be null";
             var myKey = Key.fromText("anyrandomkey");
             proof := Trie.createProof(trie, myKey);
-            Debug.print("proof: " # Hex.toText2D(proof));
-            // TODO: compare with js
+            //Debug.print("proof: " # Hex.toText2D(proof));
             val := Trie.verifyProof(root, myKey, proof);
             assert val == #excluded;
 

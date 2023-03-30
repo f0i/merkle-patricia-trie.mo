@@ -2,6 +2,47 @@
 
 Implementation of a Merkle Patricia Trie in Motoko.
 
+## Install
+
+### Vessel
+
+Add the repository to the package set:
+
+```dhall
+let additions = [
+  { name = "merkle-patricia-trie"
+  , version = "master"
+  , repo = "https://github.com/f0i/merkle-patricia-trie.mo"
+  , dependencies = [] : List Text
+  },
+  ...
+] : List Package
+```
+
+and to the dependencies in `vessel.dhall`:
+
+```dhall
+{
+  dependencies = [ "base", "merkle-patricia-trie" ],
+  compiler = Some "0.7.4"
+}
+```
+
+### MOPS
+
+```bash
+mops add https://github.com/f0i/merkle-patricia-trie.mo
+```
+
+## Usage
+
+```mo
+import Trie "mo:merkle-patricia-trie";
+
+var trie = Trie.init();
+trie := Trie.put(trie, Key.fromText("one"), [0x12, 0x34, 0x56]);
+
+```
 
 ## References
 

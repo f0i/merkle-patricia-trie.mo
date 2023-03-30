@@ -43,6 +43,16 @@ module {
         Util.takeBytes(key, n);
     };
 
+    public func join(a : Key, b : Key) : Key {
+        let sizeA = a.size();
+        let sizeB = b.size();
+        Array.tabulate(sizeA + sizeB, func(x : Nat) : Nibble = if (x < sizeA) a[x] else b[x - sizeA]);
+    };
+
+    public func append(a : Key, b : Nibble) : Key {
+        Array.tabulate(a.size() + 1, func(x : Nat) : Nibble = if (x < a.size()) a[x] else b);
+    };
+
     public func toText(key : Key) : Text {
         let values : [Text] = Array.map<Nibble, Text>(key, Nat8.toText);
         let keyText = Text.join(",", values.vals());

@@ -1,6 +1,6 @@
 import TrieSpec "trie/trie.spec";
 import NibbleSpec "util/nibble.spec";
-import KeySpec "trie/node/key.spec";
+import KeySpec "trie/key.spec";
 import ProofSpec "trie/proof.spec";
 import { done } "Test";
 

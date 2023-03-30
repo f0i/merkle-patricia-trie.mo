@@ -1,4 +1,4 @@
-import { section; test } = "../Test";
+import { chapter; section; test } = "../Test";
 
 import Option "mo:base/Option";
 
@@ -28,8 +28,9 @@ module {
     public func basicTests() {
         var trie = Trie.init();
         var key = testKey();
+        chapter "Basic Trie Tests";
 
-        section "Trie";
+        section "put";
         do {
             test "trie is not empty after put";
             trie := Trie.put(trie, key, []);
@@ -161,6 +162,24 @@ module {
 
                 assert (trie1 == trie2);
             };
+        };
+
+        section "iter";
+        do {
+            var trie = Trie.init();
+            trie := Trie.put(trie, Key.fromText("key1"), Buffer.fromText("value1"));
+            trie := Trie.put(trie, Key.fromText("key2"), Buffer.fromText("value2"));
+            trie := Trie.put(trie, Key.fromText("key22"), Buffer.fromText("value22"));
+            trie := Trie.put(trie, Key.fromText("key3"), Buffer.fromText("value3"));
+            trie := Trie.put(trie, Key.fromText("key4"), Buffer.fromText("value4"));
+
+            let iter = Trie.toIter(trie);
+            assert iter.next() == ?(Key.fromText("key1"), Buffer.fromText("value1"));
+            assert iter.next() == ?(Key.fromText("key2"), Buffer.fromText("value2"));
+            assert iter.next() == ?(Key.fromText("key22"), Buffer.fromText("value22"));
+            assert iter.next() == ?(Key.fromText("key3"), Buffer.fromText("value3"));
+            assert iter.next() == ?(Key.fromText("key4"), Buffer.fromText("value4"));
+            assert iter.next() == null;
 
         };
     };

@@ -17,6 +17,7 @@ import Hex "util/Hex";
 import TrieMap "mo:base/TrieMap";
 import BaseHash "mo:base/Hash";
 import Nat32 "mo:base/Nat32";
+import Int "mo:base/Int";
 
 module {
   public type MerklePatriciaTrie = Node;
@@ -658,6 +659,57 @@ module {
       };
       case (_) {
         return path;
+      };
+    };
+  };
+
+  public func toIter(trie : Trie) : Iter.Iter<(Key, Buffer)> {
+    type StackElement = { key : Key; node : Node };
+
+    object {
+      var stack : List.List<StackElement> = ?({ key = []; node = trie }, null);
+
+      public func next() : ?(Key, Value) {
+        switch (stack) {
+          case (null) { return null };
+          case (?(n, tail)) {
+            switch (n.node) {
+              case (#hash(hash)) { Debug.trap("Trie.toIter: incomplete trie") };
+              case (#nul) {
+                stack := tail;
+                return next();
+              };
+              case (#extension(ext)) {
+                let newKey = Key.join(n.key, ext.key);
+                stack := ?({ key = newKey; node = ext.node }, tail);
+                return next();
+              };
+              case (#leaf(leaf)) {
+                stack := tail;
+                return ?(Key.join(n.key, leaf.key), leaf.value);
+              };
+              case (#branch(branch)) {
+                stack := tail;
+                for (i in Iter.revRange(15, 0)) {
+                  let index = Int.abs(i);
+                  if (branch.nodes[index] != #nul) {
+                    stack := ?(
+                      {
+                        key = Key.append(n.key, Nat8.fromNat(index));
+                        node = branch.nodes[index];
+                      },
+                      stack,
+                    );
+                  };
+                };
+                switch (branch.value) {
+                  case (?value) { return ?(n.key, value) };
+                  case (null) { return next() };
+                };
+              };
+            };
+          };
+        };
       };
     };
   };

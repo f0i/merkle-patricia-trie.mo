@@ -136,7 +136,7 @@ module {
                 return #err("RPL.decode error: unexpected RLP type #longString");
             };
             case (null) {
-                return #err("RPL.decode error: unexpected RLP type null");
+                return #err("RPL.decode error: could not determine type");
             };
         };
     };
