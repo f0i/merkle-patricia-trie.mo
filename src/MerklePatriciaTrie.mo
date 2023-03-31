@@ -28,10 +28,6 @@ module {
   type List<T> = List.List<T>;
   type TrieMap = TrieMap.TrieMap<Hash, Node>;
 
-  func print(msg : Text) {
-    //Debug.print(msg);
-  };
-
   public type Node = {
     #nul;
     #branch : Branch;
@@ -142,28 +138,21 @@ module {
 
   public func verifyProof(root : Hash, key : Key, proof : Proof) : ProofResult {
     let db = TrieMap.TrieMap<Hash, Node>(hashEqual, hashHash);
-    print("root hash: " # Hex.toText(root));
     for (item in proof.vals()) {
       let node = nodeDecode(item);
       let hash1 = nodeHash(node);
       db.put(hash1, node);
-      print("proof input: " # Hex.toText(item));
-      print("proof entry: " # Hex.toText(hash1) # ": " # nodeToText(node));
       if (hash1.size() < 32) {
         let hash2 = rootHash(node);
         db.put(hash2, node);
-        print("proof entry: " # Hex.toText(hash2) # ": " # nodeToText(node));
       };
     };
 
     let path = findPathWithDb(#hash(root), key, null, db);
 
-    print("verifyProof: " # pathToText(path));
-
     if (path.remaining.size() > 0) {
       switch (path.node) {
         case (#hash(hash)) {
-          print("invalid proof path: " # pathToText(path));
           return #invalidProof
 
         };
@@ -274,7 +263,6 @@ module {
   };
 
   public func put(trie : Trie, key : Key, value : Value) : Trie {
-    print("put(" # Key.toText(key) # " in " # nodeToText(trie) # ")");
     if (trie == #nul) {
       // Insert initial value
       let newNode : Node = #leaf({
@@ -294,20 +282,17 @@ module {
       case (#leaf _, _) { update := true; node }; // update existing leaf
       case (#branch _, _) { update := true; node }; // update existing branch value
       case (_, null) {
-        print("Stuck on root");
         trie;
       };
       case (_, ?((k, n), _)) {
         switch (n) {
           case (#branch branch) {
-            print("was in branch: " # nodeToText(n) # " with key " # Key.toText(k));
             branch.nodes[Key.toIndex(k)];
           };
           case (_) { n };
         };
       };
     };
-    print("stuckOn: " # nodeToText(stuckOn) # " remaining: " # Key.toText(remaining) # " with " # pathToText(path));
 
     // insert leaf
     var replacementNode : Node = switch (stuckOn) {
@@ -318,7 +303,6 @@ module {
       case (#branch branch) {
         // replace existing
         if (remaining != []) Debug.trap("Can't get stuck on a branch with non empty key: " # Key.toText(remaining));
-        print("update branch value");
         updateBranchValue(branch, ?value);
       };
       case (#leaf leaf) {
@@ -387,7 +371,6 @@ module {
         };
       };
     };
-    print("replacementNode: " # nodeToText(replacementNode));
 
     // insert replacement node and update nodes in path.stack
     var toUpdate = stack;
@@ -406,7 +389,6 @@ module {
           Debug.trap("in findPath: expected #branch or #extension but got " # nodeToText(n) # " at " # Key.toText(k));
         };
         case (null) {
-          print("trie.put: " # nodeToText(replacementNode));
           return replacementNode;
         };
       };
@@ -509,7 +491,6 @@ module {
     };
 
     let serial = nodeSerialize(node);
-    print("serialized: " # Hex.toText(serial));
     return hashIfLong(serial);
   };
 
@@ -542,7 +523,6 @@ module {
 
   public func nodeSerialize(node : Node) : Buffer {
     let raw = nodeRaw(node);
-    print("nodeSerialize: " # Hex.toText2D(raw));
     if (raw.size() == 1) {
       // value or hash
       return raw[0];
