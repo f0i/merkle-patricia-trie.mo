@@ -2,24 +2,25 @@ import { chapter; section; test } = "../Test";
 
 import Option "mo:base/Option";
 
-import Buffer "../../src/util/Buffer";
 import Trie "../../src/MerklePatriciaTrie";
 import Key "../../src/trie/Key";
 import Debug "mo:base/Debug";
 import Nibble "../../src/util/Nibble";
 import Array "mo:base/Array";
-import Value "../../src/util/Value";
 import Iter "mo:base/Iter";
 import Hex "../../src/util/Hex";
 import Util "../../src/util";
+import Value "../../src/trie/Value";
+import Hash "../../src/trie/Hash";
 
 module {
 
     type Trie = Trie.Trie;
     type Path = Trie.Path;
-    type Buffer = Buffer.Buffer;
     type Key = Key.Key;
     type Nibble = Nibble.Nibble;
+    type Value = Value.Value;
+    type Hash = Hash.Hash;
 
     func testKey() : Key {
         Key.fromText("key1");
@@ -33,16 +34,35 @@ module {
         section "put";
         do {
             test "trie is not empty after put";
-            trie := Trie.put(trie, key, []);
-            assert trie != #nul;
+            trie := Trie.put(trie, key, Value.fromText("val"));
+            assert not Trie.isEmpty(trie);
 
             test "get missing path";
             trie := Trie.init();
-            assert Trie.findPath(trie, key, null) == {
+            assert Trie.pathToText(Trie.findPath(trie, key, null)) == Trie.pathToText({
                 node = #nul;
                 remaining = key;
                 stack = null;
                 mismatch = trie;
+            });
+
+            test "get existing path with branch";
+            do {
+                var trie = Trie.init();
+                let key1 = Key.fromKeyBytes([0x12, 0x31]);
+                let key2 = Key.fromKeyBytes([0x22, 0x32]);
+                let key3 = Key.fromKeyBytes([0x32, 0x33]);
+                trie := Trie.put(trie, key1, Value.fromText("val"));
+                trie := Trie.put(trie, key2, Value.fromText("val"));
+                trie := Trie.put(trie, key3, Value.fromText("val"));
+
+                let path = Trie.findPath(trie, key2, null);
+                let expected : Trie.Node = #leaf {
+                    key = Key.slice(key2, 1);
+                    value = Value.fromText("val");
+                    var hash = null;
+                };
+                assert Trie.nodeEqual(path.node, expected);
             };
 
             test "get existing path with branch";
@@ -51,36 +71,17 @@ module {
                 let key1 = Key.fromKeyBytes([0x12, 0x31]);
                 let key2 = Key.fromKeyBytes([0x22, 0x32]);
                 let key3 = Key.fromKeyBytes([0x32, 0x33]);
-                trie := Trie.put(trie, key1, []);
-                trie := Trie.put(trie, key2, []);
-                trie := Trie.put(trie, key3, []);
+                trie := Trie.put(trie, key1, "");
+                trie := Trie.put(trie, key2, "");
+                trie := Trie.put(trie, key3, "");
 
                 let path = Trie.findPath(trie, key2, null);
                 let expected : Trie.Node = #leaf {
                     key = Key.slice(key2, 1);
-                    value = [];
-                    hash = [];
+                    value = "";
+                    var hash = null;
                 };
-                assert path.node == expected;
-            };
-
-            test "get existing path with branch";
-            do {
-                var trie = Trie.init();
-                let key1 = Key.fromKeyBytes([0x12, 0x31]);
-                let key2 = Key.fromKeyBytes([0x22, 0x32]);
-                let key3 = Key.fromKeyBytes([0x32, 0x33]);
-                trie := Trie.put(trie, key1, []);
-                trie := Trie.put(trie, key2, []);
-                trie := Trie.put(trie, key3, []);
-
-                let path = Trie.findPath(trie, key2, null);
-                let expected : Trie.Node = #leaf {
-                    key = Key.slice(key2, 1);
-                    value = [];
-                    hash = [];
-                };
-                assert (path.node == expected);
+                assert Trie.nodeEqual(path.node, expected);
             };
 
             test "extension -> branch -> 3 leafs";
@@ -89,28 +90,28 @@ module {
                 let key1 = Key.fromKeyBytes([0x12, 0x31]);
                 let key2 = Key.fromKeyBytes([0x12, 0x32]);
                 let key3 = Key.fromKeyBytes([0x12, 0x33, 0x45]);
-                trie := Trie.put(trie, key1, [1]);
-                trie := Trie.put(trie, key2, [2]);
-                trie := Trie.put(trie, key3, [3]);
+                trie := Trie.put(trie, key1, Value.fromText("1"));
+                trie := Trie.put(trie, key2, Value.fromText("2"));
+                trie := Trie.put(trie, key3, Value.fromText("3"));
 
                 let path = Trie.findPath(trie, key2, null);
                 let expected : Trie.Node = #leaf {
                     key = [];
-                    value = [2];
-                    hash = [];
+                    value = Value.fromText("2");
+                    var hash = null;
                 };
                 //Debug.print(Trie.nodeToText(trie));
                 //Debug.print(Trie.pathToText(path));
-                assert (path.node == expected);
+                assert Trie.nodeEqual(path.node, expected);
             };
 
             test "Different order should produce the same trie";
             do {
-                var keyValuePairs : [(Key, Trie.Value)] = [
-                    ([1 : Nibble, 2, 3, 4, 5, 6], []),
-                    ([1 : Nibble, 2, 3, 4, 5], []),
-                    ([1 : Nibble, 2, 3], []),
-                    ([1 : Nibble, 2, 3, 4], []),
+                var keyValuePairs : [(Key, Value)] = [
+                    ([1 : Nibble, 2, 3, 4, 5, 6], "1"),
+                    ([1 : Nibble, 2, 3, 4, 5], "2"),
+                    ([1 : Nibble, 2, 3], "3"),
+                    ([1 : Nibble, 2, 3, 4], "4"),
                 ];
                 var trie1 = Trie.init();
                 for ((key, value) in keyValuePairs.vals()) {
@@ -132,16 +133,16 @@ module {
                     };
                 };
 
-                assert (trie1 == trie2);
+                assert Trie.equal(trie1, trie2);
             };
 
             test "Reinsert shouldn't change the trie";
             do {
-                var keyValuePairs : [(Key, Trie.Value)] = [
-                    ([1 : Nibble, 2, 3, 4, 5, 6], []),
-                    ([1 : Nibble, 2, 3, 4, 5], []),
-                    ([1 : Nibble, 2, 3], []),
-                    ([1 : Nibble, 2, 3, 4], []),
+                var keyValuePairs : [(Key, Value)] = [
+                    ([1 : Nibble, 2, 3, 4, 5, 6], Value.fromText("1")),
+                    ([1 : Nibble, 2, 3, 4, 5], Value.fromText("2")),
+                    ([1 : Nibble, 2, 3], Value.fromText("3")),
+                    ([1 : Nibble, 2, 3, 4], Value.fromText("4")),
                 ];
                 var trie1 = Trie.init();
                 for ((key, value) in keyValuePairs.vals()) {
@@ -153,32 +154,33 @@ module {
                 // check if all key are set
                 for ((key, value) in keyValuePairs.vals()) {
                     trie2 := Trie.put(trie1, key, value);
-                    if (trie1 != trie2) {
+                    if (not Trie.equal(trie1, trie2)) {
                         Debug.print("the trie: " # Trie.nodeToText(trie1));
                         Debug.print(" != trie: " # Trie.nodeToText(trie2));
                         assert false;
                     };
                 };
 
-                assert (trie1 == trie2);
+                assert Trie.equal(trie1, trie2);
             };
         };
 
         section "iter";
         do {
+            test "Get all key value pairs";
             var trie = Trie.init();
-            trie := Trie.put(trie, Key.fromText("key1"), Buffer.fromText("value1"));
-            trie := Trie.put(trie, Key.fromText("key2"), Buffer.fromText("value2"));
-            trie := Trie.put(trie, Key.fromText("key22"), Buffer.fromText("value22"));
-            trie := Trie.put(trie, Key.fromText("key3"), Buffer.fromText("value3"));
-            trie := Trie.put(trie, Key.fromText("key4"), Buffer.fromText("value4"));
+            trie := Trie.put(trie, Key.fromText("key1"), Value.fromText("value1"));
+            trie := Trie.put(trie, Key.fromText("key2"), Value.fromText("value2"));
+            trie := Trie.put(trie, Key.fromText("key22"), Value.fromText("value22"));
+            trie := Trie.put(trie, Key.fromText("key3"), Value.fromText("value3"));
+            trie := Trie.put(trie, Key.fromText("key4"), Value.fromText("value4"));
 
             let iter = Trie.toIter(trie);
-            assert iter.next() == ?(Key.fromText("key1"), Buffer.fromText("value1"));
-            assert iter.next() == ?(Key.fromText("key2"), Buffer.fromText("value2"));
-            assert iter.next() == ?(Key.fromText("key22"), Buffer.fromText("value22"));
-            assert iter.next() == ?(Key.fromText("key3"), Buffer.fromText("value3"));
-            assert iter.next() == ?(Key.fromText("key4"), Buffer.fromText("value4"));
+            assert iter.next() == ?(Key.fromText("key1"), Value.fromText("value1"));
+            assert iter.next() == ?(Key.fromText("key2"), Value.fromText("value2"));
+            assert iter.next() == ?(Key.fromText("key22"), Value.fromText("value22"));
+            assert iter.next() == ?(Key.fromText("key3"), Value.fromText("value3"));
+            assert iter.next() == ?(Key.fromText("key4"), Value.fromText("value4"));
             assert iter.next() == null;
 
         };
@@ -195,7 +197,7 @@ module {
             let leaf : Trie.Leaf = {
                 key = [7, 4, 6, 5, 7, 3, 7, 4];
                 value = Value.fromText("one");
-                hash = [];
+                var hash = null;
             };
             //Debug.print(Trie.hashHex(#leaf leaf));
             assert (Trie.hashHex(#leaf leaf)) == "2b77e8547bc55e2a95227c939f9f9d67952de1e970a017e0910be510b090aff3";
@@ -204,13 +206,13 @@ module {
             let branch : Trie.Branch = {
                 nodes = [#nul, #nul, #nul, #nul, #nul, #nul, #nul, #nul, #nul, #nul, #nul, #nul, #nul, #nul, #nul, #nul];
                 value = ?Value.fromText("one");
-                hash = [];
+                var hash = null;
             };
             //Debug.print(Trie.hashHex(#branch branch));
             assert (Trie.hashHex(#branch branch)) == "5798fa3858f12926c10e79dfae7fc774672634926d378c404d3ded09465f6866";
 
             test "#hash";
-            let bytes = Util.unwrap(Hex.toArray("5798fa3858f12926c10e79dfae7fc774672634926d378c404d3ded09465f6866"));
+            let bytes = Option.get<Hash>(Hash.fromHex("5798fa3858f12926c10e79dfae7fc774672634926d378c404d3ded09465f6866"), "");
             let hash : Trie.Node = #hash(bytes);
             assert (Trie.hashHex(hash)) == "5798fa3858f12926c10e79dfae7fc774672634926d378c404d3ded09465f6866";
 
@@ -323,7 +325,7 @@ module {
 
             test "should delete a value";
             trie := Trie.delete(trie, Key.fromText("test"));
-            assert Trie.get(trie, Key.fromText("test")) == ?[] /* TODO: replace ?[] with null */;
+            assert Trie.get(trie, Key.fromText("test")) == ?"" /* TODO: replace ?[] with null */;
 
             test "should recreate a value";
             trie := Trie.put(trie, Key.fromText("test"), Value.fromText("one"));
@@ -342,7 +344,7 @@ module {
 
             test "should delete from a branch";
             trie := Trie.delete(trie, Key.fromText("doge"));
-            assert Trie.get(trie, Key.fromText("doge")) == ?[]; // TODO: should be null
+            assert Trie.get(trie, Key.fromText("doge")) == ?""; // TODO: should be null
 
             section "storing longer values";
             do {

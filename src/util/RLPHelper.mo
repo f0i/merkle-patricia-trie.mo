@@ -12,6 +12,8 @@ import RLPDecode "mo:rlp/rlp/decode";
 import RLPType "mo:rlp/types";
 import Hex "Hex";
 import Int "mo:base/Int";
+import Value "../trie/Value";
+import Hash "../trie/Hash";
 
 module {
 
@@ -19,20 +21,22 @@ module {
     type InternalResult = Result.Result<Buffer, Text>;
     type EncodeResult = Result.Result<[Nat8], Text>;
     type Result<T, E> = Result.Result<T, E>;
+    type Value = Value.Value;
+    type Hash = Hash.Hash;
 
     // RLP encode an hash. If the "hash" is shorter, it is the already RLP encoded subtree
-    public func encodeHash(array : [Nat8]) : [Nat8] {
-        if (array.size() == 32) {
-            encode(array);
-        } else if (array.size() < 32) {
-            array;
+    public func encodeHash(hash : Hash) : [Nat8] {
+        if (hash.size() == 32) {
+            encode(Hash.toArray(hash));
+        } else if (hash.size() < 32) {
+            Hash.toArray(hash);
         } else {
-            Debug.print("encodeHash: already encoded: " # Hex.toText(array));
-            assert array[0] == 0xe7;
-            assert array.size() == 33;
-            assert false;
-            return array;
+            Debug.trap("encodeHash: already encoded: " # Hash.toHex(hash));
         };
+    };
+    public func encodeValue(value : Value) : [Nat8] {
+        let array = Value.toArray(value);
+        return encode(array);
     };
     public func encode(array : [Nat8]) : [Nat8] {
         let buffer = Buffer.fromArray<Nat8>(array);
@@ -44,8 +48,8 @@ module {
     public func encodeEach(arrays : [[Nat8]]) : [[Nat8]] {
         Array.map<[Nat8], [Nat8]>(arrays, encode);
     };
-    public func encodeEachHash(arrays : [[Nat8]]) : [[Nat8]] {
-        Array.map<[Nat8], [Nat8]>(arrays, encodeHash);
+    public func encodeEachHash(arrays : [Hash]) : [[Nat8]] {
+        Array.map<Hash, [Nat8]>(arrays, encodeHash);
     };
 
     public func encodeOuter(arrays : [[Nat8]]) : [Nat8] {
@@ -77,27 +81,27 @@ module {
         };
     };
 
-    public func decodeValue(input : [Nat8]) : Result<[Nat8], Text> {
+    public func decodeValue(input : [Nat8]) : Result<Value, Text> {
         if (input == [0x80]) {
-            return #ok([]); // RLP encoded empty array
+            return #ok(Value.empty); // RLP encoded empty array
         };
         let info = getPrefixInfo(input);
         switch (info) {
             case (?{ rlpType = #singleByte; prefix; data }) {
                 assert data == 1;
-                return #ok([input[prefix]]);
+                return #ok(Value.fromArray([input[prefix]]));
             };
             case (?{ rlpType = #shortString; data; prefix }) {
-                return #ok(Util.dropBytes(input, prefix));
+                return #ok(Value.fromArray(Util.dropBytes(input, prefix)));
             };
             case (?{ rlpType = #longString; data; prefix }) {
-                return #ok(Util.dropBytes(input, prefix));
+                return #ok(Value.fromArray(Util.dropBytes(input, prefix)));
             };
             case (?{ rlpType = #shortList; data; prefix }) {
-                return #ok(input);
+                return #ok(Value.fromArray(input));
             };
             case (?{ rlpType = #longList; data; prefix }) {
-                return #ok(input);
+                return #ok(Value.fromArray(input));
             };
             case (null) { #err("decodeValue: could not get RLP info") };
         };

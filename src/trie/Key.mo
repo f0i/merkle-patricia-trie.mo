@@ -1,4 +1,3 @@
-import Buffer "../util/Buffer";
 import SHA3 "mo:sha3";
 import RLP "mo:rlp";
 import BaseBuffer "mo:base/Buffer";
@@ -11,9 +10,9 @@ import Iter "mo:base/Iter";
 import Blob "mo:base/Blob";
 import Debug "mo:base/Debug";
 import Util "../util";
+import Option "mo:base/Option";
 
 module {
-    type Buffer = Buffer.Buffer;
     type Result<T, E> = Result.Result<T, E>;
     type Nibble = Nibble.Nibble;
 
@@ -89,16 +88,38 @@ module {
         return Array.freeze<Nat8>(arr);
     };
 
-    public func compactDecode(encoded : [Nat8]) : {
+    public func compactDecode(encoded : Blob) : {
         key : Key;
         terminating : Bool;
     } {
-        var decoded = fromKeyBytes(encoded);
-        // TODO: check size and handle error
-        let prefix = decoded[0];
+        let size : Nat = encoded.size();
+        if (size < 1) return { key = []; terminating = true };
+
+        let iter = encoded.vals();
+        let (prefix, first) = Nibble.splitByte(Option.get<Nat8>(iter.next(), 0));
         let even = (prefix == 0) or (prefix == 2);
         let terminating = prefix >= 2;
-        let key = slice(decoded, if (even) 2 else 1);
+
+        let keySize : Nat = size * 2 - (if (even) 2 else 1);
+
+        var cache = if (even) null else ?first;
+        let key = Array.tabulate<Nibble>(
+            keySize,
+            func(x) : Nibble {
+                switch (cache) {
+                    case (?nibble) {
+                        cache := null;
+                        return nibble;
+                    };
+                    case (null) {
+                        let (a, b) = Nibble.splitByte(Option.get<Nat8>(iter.next(), 0));
+                        cache := ?b;
+                        return a;
+                    };
+                };
+            },
+        );
+
         return { key; terminating };
     };
 };

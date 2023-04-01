@@ -1,6 +1,5 @@
 import Arr "ArrayExtra";
 import Array "mo:base/Array";
-import Buffer "util/Buffer";
 import Debug "mo:base/Debug";
 import List "mo:base/List";
 import Nibble "util/Nibble";
@@ -18,12 +17,15 @@ import TrieMap "mo:base/TrieMap";
 import BaseHash "mo:base/Hash";
 import Nat32 "mo:base/Nat32";
 import Int "mo:base/Int";
+import Value "trie/Value";
+import Hash "trie/Hash";
+import Blob "mo:base/Blob";
 
 module {
   public type MerklePatriciaTrie = Node;
   public type Trie = Node;
-  type Buffer = Buffer.Buffer;
-  type RlpEncoded = Buffer;
+  type Value = Value.Value;
+  type RlpEncoded = [Nat8];
   type Nibble = Nibble.Nibble;
   type List<T> = List.List<T>;
   type TrieMap = TrieMap.TrieMap<Hash, Node>;
@@ -33,7 +35,7 @@ module {
     #branch : Branch;
     #leaf : Leaf;
     #extension : Extension;
-    #hash : Buffer;
+    #hash : Hash;
   };
 
   public type PartialNode = {
@@ -47,32 +49,28 @@ module {
     // 16 nodes
     nodes : [Node];
     value : ?Value;
-    hash : Hash;
+    var hash : ?Hash;
   };
 
   public type Leaf = {
     key : Key;
     value : Value;
-    hash : Hash;
+    var hash : ?Hash;
   };
 
   type Extension = {
     key : Key;
     node : Node; // TODO: rename to branch
-    hash : Hash;
+    var hash : ?Hash;
   };
 
-  //TODO: implement
-  public type Hash = Buffer;
-
-  //TODO: implement
-  public type Value = Buffer;
+  public type Hash = Hash.Hash;
 
   /// Key describing a path in the trie
   /// In the case of ethereum this is keccak256(rlp(value))
-  public type Key = [Nibble];
+  public type Key = Key.Key;
 
-  public type Proof = [Buffer];
+  public type Proof = [[Nat8]];
 
   /// Key with prefix nibble indicating type and path length:
   /// prefix 0x00 extension, even
@@ -90,10 +88,11 @@ module {
     let path : Path = findPath(trie, key, null);
     let stackSize = List.size(path.stack);
     var size = stackSize + 1;
-    if (path.mismatch != #nul) {
-      size += 1;
+    switch (path.mismatch) {
+      case (#nul) {};
+      case (_) { size += 1 };
     };
-    var proof = Array.init<Buffer>(size, []);
+    var proof = Array.init<[Nat8]>(size, []);
 
     if (path.remaining == []) {
       proof[0] := nodeSerialize(path.node);
@@ -120,14 +119,7 @@ module {
   /// generate a 32-bit hash form a sequence of bytes
   /// this takes the first 4 bytes and concatenates them
   func hashHash(self : Hash) : BaseHash.Hash {
-    if (Array.size(self) == 0) { return 0 };
-    var out : Nat32 = Nat32.fromNat(Nat8.toNat(self[0]));
-    if (Array.size(self) == 1) { return out };
-    out += Nat32.fromNat(Nat8.toNat(self[1]));
-    if (Array.size(self) == 2) { return out };
-    out += Nat32.fromNat(Nat8.toNat(self[2]));
-    if (Array.size(self) == 3) { return out };
-    return out + Nat32.fromNat(Nat8.toNat(self[3]));
+    Blob.hash(self);
   };
 
   public type ProofResult = {
@@ -138,14 +130,16 @@ module {
 
   public func verifyProof(root : Hash, key : Key, proof : Proof) : ProofResult {
     let db = TrieMap.TrieMap<Hash, Node>(hashEqual, hashHash);
+    var first = true;
     for (item in proof.vals()) {
       let node = nodeDecode(item);
       let hash1 = nodeHash(node);
       db.put(hash1, node);
-      if (hash1.size() < 32) {
+      if (first and hash1.size() < 32) {
         let hash2 = rootHash(node);
         db.put(hash2, node);
       };
+      first := false;
     };
 
     let path = findPathWithDb(#hash(root), key, null, db);
@@ -169,34 +163,31 @@ module {
 
   public func proofResultToText(val : ProofResult) : Text {
     switch (val) {
-      case (#included(value)) { "#included(" # Hex.toText(value) # ")" };
+      case (#included(value)) { "#included(" # Value.toHex(value) # ")" };
       case (#excluded) { "#excluded" };
       case (#invalidProof) { "#invalidProof" };
     };
   };
 
   /// Deserialize RLP encoded node
-  public func nodeDecode(rlpData : Buffer) : Node {
+  public func nodeDecode(rlpData : [Nat8]) : Node {
     let data = RLP.decode(rlpData);
 
     switch (data) {
       case (#ok(value)) {
-        //Debug.print("nodeDecode: " # Hex.toText2D(value));
         if (value == []) return #nul;
         if (value.size() == 17) return rawToBranch(value);
         if (value.size() == 2) {
           let compactKey = switch (RLP.decodeValue(value[0])) {
             case (#ok(value)) { value };
             case (#err(msg)) {
-              Debug.print("nodeDecode: decode key " # msg # " " # Hex.toText(value[0]));
               return #nul;
             }; // ignore invalid encoded values
           };
           let { key; terminating } = Key.compactDecode(compactKey);
-          let hashOrValue = switch (RLP.decodeValue(value[1])) {
+          let hashOrValue : Blob = switch (RLP.decodeValue(value[1])) {
             case (#ok(value)) { value };
             case (#err(msg)) {
-              Debug.print("nodeDecode: failed for value: " # msg # " " # Hex.toText(value[0]));
               return #nul;
             }; // ignore invalid encoded values
           };
@@ -207,18 +198,16 @@ module {
           };
         };
         // invalid data will be ignored (return #nul)
-        Debug.print("Trie.nodeDecode: invalid number of elements");
         return #nul;
       };
       case (#err(msg)) {
-        Debug.print("nodeDecode error: outer " # msg # " " # Hex.toText(rlpData));
         // TODO: handle error
         return #nul;
       };
     };
   };
 
-  func rawToBranch(raw : [Buffer]) : Node {
+  func rawToBranch(raw : [[Nat8]]) : Node {
     assert raw.size() == 17;
 
     var nodes = Array.init<Node>(16, #nul);
@@ -238,11 +227,11 @@ module {
         // currently it is used as a hash and requires an separate lookup
         // this will reduce computation overhead if proof is not verified,
         // but might require more lookups when verifying, potentially: TODO: performance test?
-        nodes[i] := #hash(raw[i]);
+        nodes[i] := #hash(Blob.fromArray(raw[i]));
       };
     };
 
-    let value = switch (RLP.decodeValue(raw[16])) {
+    let value : Value = switch (RLP.decodeValue(raw[16])) {
       case (#ok(value)) { value };
       case (#err(msg)) {
         Debug.print("rawToBranch: error decoding value " # msg);
@@ -253,24 +242,27 @@ module {
     let branch : Branch = {
       nodes = Array.freeze(nodes);
       value : ?Value = ?value;
-      hash : Hash = [];
+      var hash : ?Hash = null;
     };
     return #branch(branch);
   };
 
   public func delete(trie : Trie, key : Key) : Trie {
-    return put(trie, key, []); //TODO: implement
+    return put(trie, key, Value.empty); //TODO: implement
   };
 
   public func put(trie : Trie, key : Key, value : Value) : Trie {
-    if (trie == #nul) {
-      // Insert initial value
-      let newNode : Node = #leaf({
-        key;
-        value;
-        hash = [];
-      });
-      return newNode;
+    switch (trie) {
+      case (#nul) {
+        // Insert initial value
+        let newNode : Node = #leaf({
+          key;
+          value;
+          var hash = null;
+        });
+        return newNode;
+      };
+      case (_) {};
     };
 
     // Find closest node
@@ -407,7 +399,7 @@ module {
     #branch {
       nodes = Array.freeze(nodes);
       value = null;
-      hash = [];
+      var hash = null;
     };
   };
 
@@ -418,7 +410,7 @@ module {
     #branch {
       nodes = Array.freeze(nodes);
       value = ?value;
-      hash = [];
+      var hash = null;
     };
   };
 
@@ -428,7 +420,7 @@ module {
     return #branch({
       nodes = Array.freeze(nodes);
       value = branch.value;
-      hash = [];
+      var hash = null;
     });
   };
 
@@ -436,7 +428,7 @@ module {
     return #branch({
       nodes = branch.nodes;
       value = value;
-      hash = [];
+      var hash = null;
     });
   };
 
@@ -444,33 +436,23 @@ module {
     return #extension {
       key = ext.key;
       node = newNode;
-      hash = [];
+      var hash = null;
     };
   };
 
   public func createLeaf(key : Key, value : Value) : Node {
-    let hash : Hash = []; // TODO: implement
-    return #leaf { key; value; hash };
+    return #leaf { key; value; var hash = null };
   };
 
   func createExtension(key : Key, branch : Node) : Node {
     if (key == []) return branch;
-    let hash : Hash = []; // TODO: implement
-    return #extension { key; node = branch; hash };
+    return #extension { key; node = branch; var hash = null };
   };
 
-  public func get(trie : Trie, key : Buffer) : ?Value {
+  public func get(trie : Trie, key : Key) : ?Value {
     let path = findPath(trie, key, null);
     if (path.remaining.size() > 0) return null;
     return nodeValue(path.node);
-  };
-
-  func lookupNode(trie : Trie, node : Buffer) {
-    Debug.trap("implement del");
-  };
-
-  func allChildren(node : Node) : [Node] {
-    Debug.trap("implement allChildren");
   };
 
   func nodeValue(node : Node) : ?Value {
@@ -491,29 +473,29 @@ module {
     };
 
     let serial = nodeSerialize(node);
-    return hashIfLong(serial);
+    return hashIfLong(Blob.fromArray(serial));
   };
 
   /// Get an array of encoded elements
-  func nodeRaw(node : Node) : [Buffer] {
+  func nodeRaw(node : Node) : [[Nat8]] {
     switch (node) {
       case (#nul) { [] };
       case (#hash(hash)) {
         [RLP.encodeHash(hash)];
       };
       case (#branch(branch)) {
-        let raw = Array.init<Buffer>(17, [0x80]);
+        let raw = Array.init<[Nat8]>(17, [0x80]);
         for (i in Iter.range(0, 15)) {
           switch (branch.nodes[i]) {
             case (#nul) {};
             case (_) { raw[i] := RLP.encodeHash(nodeHash(branch.nodes[i])) };
           };
         };
-        raw[16] := RLP.encode(Option.get(branch.value, []));
+        raw[16] := RLP.encodeValue(Option.get<Value>(branch.value, ""));
         Array.freeze(raw);
       };
       case (#leaf(leaf)) {
-        RLP.encodeEach([Key.compactEncode(leaf.key, true), leaf.value]);
+        RLP.encodeEach([Key.compactEncode(leaf.key, true), Value.toArray(leaf.value)]);
       };
       case (#extension(ext)) {
         ([RLP.encode(Key.compactEncode(ext.key, false)), RLP.encodeHash(nodeHash(ext.node))]);
@@ -521,7 +503,7 @@ module {
     };
   };
 
-  public func nodeSerialize(node : Node) : Buffer {
+  public func nodeSerialize(node : Node) : [Nat8] {
     let raw = nodeRaw(node);
     if (raw.size() == 1) {
       // value or hash
@@ -531,24 +513,24 @@ module {
     };
   };
 
-  func hashIfLong(data : Buffer) : Buffer {
+  func hashIfLong(data : Hash) : Hash {
     if (data.size() >= 32) {
-      return Keccak.keccak(data);
+      return Keccak.keccak(Hash.toArray(data));
     } else {
       return data;
     };
   };
 
   public func rootHash(trie : Trie) : Hash {
-    var bytes = nodeHash(trie);
+    var bytes : Hash = nodeHash(trie);
     if (bytes.size() < 32) {
-      bytes := Keccak.keccak(bytes);
+      bytes := Keccak.keccak(Hash.toArray(bytes));
     };
     return bytes;
   };
 
   public func hashHex(trie : Trie) : Text {
-    return Hex.toText(rootHash(trie));
+    return Hash.toHex(rootHash(trie));
   };
 
   public type Path = {
@@ -626,8 +608,6 @@ module {
   public func findPathWithDb(node : Node, key : Key, stack : List<(Key, Node)>, db : TrieMap) : Path {
     var path = findPath(node, key, stack);
 
-    //Debug.print("findPathWithDB: " # Key.toText(key) # " in " # nodeToText(node) # " -> " # pathToText(path));
-
     switch (path) {
       case ({ node = #hash(hash); remaining; stack }) {
         switch (db.get(hash)) {
@@ -643,7 +623,7 @@ module {
     };
   };
 
-  public func toIter(trie : Trie) : Iter.Iter<(Key, Buffer)> {
+  public func toIter(trie : Trie) : Iter.Iter<(Key, Value)> {
     type StackElement = { key : Key; node : Node };
 
     object {
@@ -656,34 +636,43 @@ module {
             switch (n.node) {
               case (#hash(hash)) { Debug.trap("Trie.toIter: incomplete trie") };
               case (#nul) {
+                // ignore null
                 stack := tail;
                 return next();
               };
               case (#extension(ext)) {
+                // replace extension on the stack with the branch it points to
                 let newKey = Key.join(n.key, ext.key);
                 stack := ?({ key = newKey; node = ext.node }, tail);
                 return next();
               };
               case (#leaf(leaf)) {
+                // leaf will return the value
                 stack := tail;
                 return ?(Key.join(n.key, leaf.key), leaf.value);
               };
               case (#branch(branch)) {
+                // add each node to the stack, if branch has a value return it
                 stack := tail;
                 for (i in Iter.revRange(15, 0)) {
                   let index = Int.abs(i);
-                  if (branch.nodes[index] != #nul) {
-                    stack := ?(
-                      {
-                        key = Key.append(n.key, Nat8.fromNat(index));
-                        node = branch.nodes[index];
-                      },
-                      stack,
-                    );
+                  switch (branch.nodes[index]) {
+                    case (#nul) {};
+                    case (_) {
+                      stack := ?(
+                        {
+                          key = Key.append(n.key, Nat8.fromNat(index));
+                          node = branch.nodes[index];
+                        },
+                        stack,
+                      );
+                    };
                   };
                 };
                 switch (branch.value) {
-                  case (?value) { return ?(n.key, value) };
+                  case (?value) {
+                    return ?(n.key, value);
+                  };
                   case (null) { return next() };
                 };
               };
@@ -694,10 +683,23 @@ module {
     };
   };
 
+  public func isEmpty(trie : Trie) : Bool {
+    switch (trie) {
+      case (#nul) { true };
+      case (_) { false };
+    };
+  };
+
+  public func nodeEqual(a : Node, b : Node) : Bool {
+    nodeHash(a) == nodeHash(b);
+  };
+
+  public func equal(a : Trie, b : Trie) : Bool = nodeEqual(a, b);
+
   public func nodeToText(node : Node) : Text {
     switch (node) {
       case (#nul) { "<>" };
-      case (#hash(hash)) { Hex.toText(hash) };
+      case (#hash(hash)) { Hash.toHex(hash) };
       case (#branch(branch)) {
         let branches = Array.map(branch.nodes, nodeToText);
         switch (branch.value) {
@@ -710,7 +712,7 @@ module {
         };
       };
       case (#leaf(leaf)) {
-        "leaf(" # Key.toText(leaf.key) # ", " # Hex.toText(leaf.value) # ")";
+        "leaf(" # Key.toText(leaf.key) # ", " # Value.toHex(leaf.value) # ")";
       };
       case (#extension(ext)) {
         "extension(" # Key.toText(ext.key) # ": " # nodeToText(ext.node) # ")";

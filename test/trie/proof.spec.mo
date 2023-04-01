@@ -1,19 +1,20 @@
 import { chapter; section; test } = "../Test";
 
-import Buffer "../../src/util/Buffer";
 import Trie "../../src/MerklePatriciaTrie";
 import Key "../../src/trie/Key";
 import Debug "mo:base/Debug";
 import Nibble "../../src/util/Nibble";
 import Array "mo:base/Array";
-import Value "../../src/util/Value";
 import Hex "../../src/util/Hex";
 import Util "../../src/util";
+import Value "../../src/trie/Value";
+import Text "mo:base/Text";
+import Blob "mo:base/Blob";
 
 module {
     type Trie = Trie.Trie;
     type Path = Trie.Path;
-    type Buffer = Buffer.Buffer;
+    type Value = Value.Value;
     type Key = Key.Key;
     type Nibble = Nibble.Nibble;
 
@@ -23,14 +24,14 @@ module {
         section "serialize";
         do {
             test "serialize leaf";
-            let leaf = Trie.createLeaf(Key.fromText("test"), Buffer.fromText("value"));
+            let leaf : Trie.Node = Trie.createLeaf(Key.fromText("test"), Value.fromText("value"));
             let bytes = Trie.nodeSerialize(leaf);
             //Debug.print("bytes " # Hex.toText(bytes));
             assert bytes == Util.unwrap(Hex.toArray("cc8520746573748576616c7565"));
 
             test "deserialize leaf";
-            let node = Trie.nodeDecode(bytes);
-            assert node == leaf;
+            let node : Trie.Node = Trie.nodeDecode(bytes);
+            assert Trie.nodeEqual(node, leaf);
         };
     };
 
@@ -42,9 +43,9 @@ module {
 
         section "create a merkle proof and verify it";
         do {
-            trie := Trie.put(trie, Key.fromText("key1aa"), Buffer.fromText("0123456789012345678901234567890123456789xx"));
-            trie := Trie.put(trie, Key.fromText("key2bb"), Buffer.fromText("aval2"));
-            trie := Trie.put(trie, Key.fromText("key3cc"), Buffer.fromText("aval3"));
+            trie := Trie.put(trie, Key.fromText("key1aa"), Value.fromText("0123456789012345678901234567890123456789xx"));
+            trie := Trie.put(trie, Key.fromText("key2bb"), Value.fromText("aval2"));
+            trie := Trie.put(trie, Key.fromText("key3cc"), Value.fromText("aval3"));
 
             var root = Trie.rootHash(trie);
 
@@ -58,11 +59,11 @@ module {
 
             test "verify proofs";
             var val = Trie.verifyProof(root, Key.fromText("key2bb"), proof);
-            assert val == #included(Buffer.fromText("aval2"));
+            assert val == #included(Value.fromText("aval2"));
 
             proof := Trie.createProof(trie, Key.fromText("key1aa"));
             val := Trie.verifyProof(root, Key.fromText("key1aa"), proof);
-            assert val == #included(Buffer.fromText("0123456789012345678901234567890123456789xx"));
+            assert val == #included(Value.fromText("0123456789012345678901234567890123456789xx"));
 
             test "Expected value at 'key2' to be null";
             proof := Trie.createProof(trie, Key.fromText("key2bb"));
@@ -81,11 +82,11 @@ module {
             test "extra nodes are just ignored";
             myKey := Key.fromText("anothergarbagekey"); // should generate a valid proof of null
             proof := Trie.createProof(trie, myKey);
-            proof := Array.append(proof, [Buffer.fromText("123456")]); // extra nodes are just ignored
+            proof := Array.append(proof, [Blob.toArray(Text.encodeUtf8("123456"))]); // extra nodes are just ignored
             val := Trie.verifyProof(root, myKey, proof);
             assert val == #excluded;
 
-            trie := Trie.put(trie, Key.fromText("another"), Buffer.fromText("3498h4riuhgwe"));
+            trie := Trie.put(trie, Key.fromText("another"), Value.fromText("3498h4riuhgwe"));
             root := Trie.rootHash(trie);
 
             test "to fail our proof we can request a proof for one key, and try to use that proof on another key";
@@ -108,7 +109,7 @@ module {
             assert val == #excluded;
 
             test "now make the key non-null so the exclusion proof becomes invalid";
-            trie := Trie.put(trie, myKey, Buffer.fromText("thisisavalue"));
+            trie := Trie.put(trie, myKey, Value.fromText("thisisavalue"));
             root := Trie.rootHash(trie);
 
             val := Trie.verifyProof(root, myKey, proof);
@@ -117,19 +118,19 @@ module {
 
         test "create a merkle proof and verify it with a single long key";
         trie := Trie.init();
-        trie := Trie.put(trie, Key.fromText("key1aa"), Buffer.fromText("0123456789012345678901234567890123456789xx"));
+        trie := Trie.put(trie, Key.fromText("key1aa"), Value.fromText("0123456789012345678901234567890123456789xx"));
         var root = Trie.rootHash(trie);
         var proof = Trie.createProof(trie, Key.fromText("key1aa"));
         var val = Trie.verifyProof(root, Key.fromText("key1aa"), proof);
-        assert val == #included(Buffer.fromText("0123456789012345678901234567890123456789xx"));
+        assert val == #included(Value.fromText("0123456789012345678901234567890123456789xx"));
 
         test "create a merkle proof and verify it with a single short key";
         trie := Trie.init();
-        trie := Trie.put(trie, Key.fromText("key1aa"), Buffer.fromText("01234"));
+        trie := Trie.put(trie, Key.fromText("key1aa"), Value.fromText("01234"));
         root := Trie.rootHash(trie);
         proof := Trie.createProof(trie, Key.fromText("key1aa"));
         val := Trie.verifyProof(root, Key.fromText("key1aa"), proof);
-        assert val == #included(Buffer.fromText("01234"));
+        assert val == #included(Value.fromText("01234"));
 
         test "create a merkle proof and verify it whit keys in the middle ";
         trie := Trie.init();
@@ -137,50 +138,50 @@ module {
         trie := Trie.put(
             trie,
             Key.fromText("key1aa"),
-            Buffer.fromText("0123456789012345678901234567890123456789xxx"),
+            Value.fromText("0123456789012345678901234567890123456789xxx"),
         );
         trie := Trie.put(
             trie,
             Key.fromText("key1"),
-            Buffer.fromText("0123456789012345678901234567890123456789Very_Long"),
+            Value.fromText("0123456789012345678901234567890123456789Very_Long"),
         );
-        trie := Trie.put(trie, Key.fromText("key2bb"), Buffer.fromText("aval3"));
-        trie := Trie.put(trie, Key.fromText("key2"), Buffer.fromText("short"));
-        trie := Trie.put(trie, Key.fromText("key3cc"), Buffer.fromText("aval3"));
-        trie := Trie.put(trie, Key.fromText("key3"), Buffer.fromText("1234567890123456789012345678901"));
+        trie := Trie.put(trie, Key.fromText("key2bb"), Value.fromText("aval3"));
+        trie := Trie.put(trie, Key.fromText("key2"), Value.fromText("short"));
+        trie := Trie.put(trie, Key.fromText("key3cc"), Value.fromText("aval3"));
+        trie := Trie.put(trie, Key.fromText("key3"), Value.fromText("1234567890123456789012345678901"));
         root := Trie.rootHash(trie);
 
         proof := Trie.createProof(trie, Key.fromText("key1"));
         val := Trie.verifyProof(root, Key.fromText("key1"), proof);
-        assert val == #included(Buffer.fromText("0123456789012345678901234567890123456789Very_Long"));
+        assert val == #included(Value.fromText("0123456789012345678901234567890123456789Very_Long"));
 
         proof := Trie.createProof(trie, Key.fromText("key2"));
         val := Trie.verifyProof(root, Key.fromText("key2"), proof);
-        assert val == #included(Buffer.fromText("short"));
+        assert val == #included(Value.fromText("short"));
 
         proof := Trie.createProof(trie, Key.fromText("key3"));
         val := Trie.verifyProof(root, Key.fromText("key3"), proof);
-        assert val == #included(Buffer.fromText("1234567890123456789012345678901"));
+        assert val == #included(Value.fromText("1234567890123456789012345678901"));
 
         test "should succeed with a simple embedded extension-branch";
         trie := Trie.init();
 
-        trie := Trie.put(trie, Key.fromText("a"), Buffer.fromText("a"));
-        trie := Trie.put(trie, Key.fromText("b"), Buffer.fromText("b"));
-        trie := Trie.put(trie, Key.fromText("c"), Buffer.fromText("c"));
+        trie := Trie.put(trie, Key.fromText("a"), Value.fromText("a"));
+        trie := Trie.put(trie, Key.fromText("b"), Value.fromText("b"));
+        trie := Trie.put(trie, Key.fromText("c"), Value.fromText("c"));
         root := Trie.rootHash(trie);
 
         proof := Trie.createProof(trie, Key.fromText("a"));
         val := Trie.verifyProof(root, Key.fromText("a"), proof);
-        assert val == #included(Buffer.fromText("a"));
+        assert val == #included(Value.fromText("a"));
 
         proof := Trie.createProof(trie, Key.fromText("b"));
         val := Trie.verifyProof(root, Key.fromText("b"), proof);
-        assert val == #included(Buffer.fromText("b"));
+        assert val == #included(Value.fromText("b"));
 
         proof := Trie.createProof(trie, Key.fromText("c"));
         val := Trie.verifyProof(root, Key.fromText("c"), proof);
-        assert val == #included(Buffer.fromText("c"));
+        assert val == #included(Value.fromText("c"));
 
     };
 
