@@ -469,11 +469,44 @@ module {
   func nodeHash(node : Node) : Hash {
     switch (node) {
       case (#hash(hash)) { return hash };
-      case (_) {};
-    };
+      case (#branch(branch)) {
+        switch (branch.hash) {
+          case (null) {
+            let serial = nodeSerialize(node);
+            let hash = hashIfLong(Blob.fromArray(serial));
+            branch.hash := ?hash;
+            return hash;
+          };
+          case (?hash) { return hash };
+        };
+      };
+      case (#leaf(leaf)) {
+        switch (leaf.hash) {
+          case (null) {
+            let serial = nodeSerialize(node);
+            let hash = hashIfLong(Blob.fromArray(serial));
+            leaf.hash := ?hash;
+            return hash;
+          };
+          case (?hash) { return hash };
+        };
+      };
+      case (#extension(ext)) {
+        switch (ext.hash) {
+          case (null) {
+            let serial = nodeSerialize(node);
+            let hash = hashIfLong(Blob.fromArray(serial));
+            ext.hash := ?hash;
+            return hash;
 
-    let serial = nodeSerialize(node);
-    return hashIfLong(Blob.fromArray(serial));
+          };
+          case (?hash) { return hash };
+        };
+      };
+      case (#nul) {
+        return Hash.empty;
+      };
+    };
   };
 
   /// Get an array of encoded elements
@@ -691,7 +724,22 @@ module {
   };
 
   public func nodeEqual(a : Node, b : Node) : Bool {
-    nodeHash(a) == nodeHash(b);
+    switch (a, b) {
+      case (#nul, #nul) { true };
+      case (#hash(_), _) { nodeHash(a) == nodeHash(b) };
+      case (_, #hash(_)) { nodeHash(a) == nodeHash(b) };
+      case (#branch(a), #branch(b)) {
+        for (i in Iter.range(0, 15)) {
+          if (not nodeEqual(a.nodes[i], b.nodes[i])) return false;
+        };
+        a.value == b.value;
+      };
+      case (#extension(a), #extension(b)) {
+        a.key == b.key and nodeEqual(a.node, b.node)
+      };
+      case (#leaf(a), #leaf(b)) { a.key == b.key and a.value == b.value };
+      case (_, _) { false };
+    };
   };
 
   public func equal(a : Trie, b : Trie) : Bool = nodeEqual(a, b);

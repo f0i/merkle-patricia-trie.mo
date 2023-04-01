@@ -6,6 +6,8 @@ import Hex "../util/Hex";
 module {
     public type Hash = Blob;
 
+    public let empty : Hash = "\80";
+
     public func fromHex(hex : Text) : ?Hash {
         switch (Hex.toArray(hex)) {
             case (#ok(value)) { ?Blob.fromArray(value) };

@@ -5,12 +5,12 @@ set -eu -o pipefail
 wd="$PWD"
 
 # compile wasm
-$(vessel bin)/moc $(vessel sources) -c test/index.spec.mo -wasi-system-api
+$(vessel bin)/moc $(vessel sources) -c test/performance.mo -wasi-system-api
 
 # add profiling
 cd ../motoko/wasm-profiler
 cargo run -- \
-    -i ../../merkle-patricia-trie.mo/index.spec.wasm \
+    -i ../../merkle-patricia-trie.mo/performance.wasm \
     -o /tmp/instrumented.wasm \
     --wasi-system-api
 
