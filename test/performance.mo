@@ -1,11 +1,17 @@
-/// Performance tests
-
 import TrieSpec "trie/trie.spec";
-import Iter "mo:base/Iter";
+import NibbleSpec "util/nibble.spec";
 import KeySpec "trie/key.spec";
+import ProofSpec "trie/proof.spec";
+import { done } "Test";
 
+KeySpec.tests();
+NibbleSpec.tests();
+
+TrieSpec.hashTests();
 TrieSpec.basicTests();
+TrieSpec.ethereumJsTests();
 
-func test_put() {
+ProofSpec.tests();
+ProofSpec.ethereumjsTests();
 
-};
+done();
