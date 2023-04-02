@@ -1,7 +1,7 @@
 import { section; test } = "../Test";
 
 import Nibble "../../src/util/Nibble";
-import Key "../../src/trie/Key";
+import Key "../../src/Key";
 
 module {
     type Nibble = Nibble.Nibble;

@@ -1,7 +1,7 @@
 import { section; test } = "../Test";
 
 import Nibble "../../src/util/Nibble";
-import Key "../../src/trie/Key";
+import Key "../../src/Key";
 import Debug "mo:base/Debug";
 
 module {

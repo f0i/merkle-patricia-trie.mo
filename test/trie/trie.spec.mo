@@ -2,16 +2,16 @@ import { chapter; section; test } = "../Test";
 
 import Option "mo:base/Option";
 
-import Trie "../../src/MerklePatriciaTrie";
-import Key "../../src/trie/Key";
+import Trie "../../src/Trie";
+import Key "../../src/Key";
 import Debug "mo:base/Debug";
 import Nibble "../../src/util/Nibble";
 import Array "mo:base/Array";
 import Iter "mo:base/Iter";
 import Hex "../../src/util/Hex";
 import Util "../../src/util";
-import Value "../../src/trie/Value";
-import Hash "../../src/trie/Hash";
+import Value "../../src/Value";
+import Hash "../../src/Hash";
 
 module {
 

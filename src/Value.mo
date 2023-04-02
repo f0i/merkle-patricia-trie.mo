@@ -1,7 +1,7 @@
 import Array "mo:base/Array";
 import Blob "mo:base/Blob";
 import Text "mo:base/Text";
-import Hex "../util/Hex";
+import Hex "util/Hex";
 
 module {
     public type Value = Blob;

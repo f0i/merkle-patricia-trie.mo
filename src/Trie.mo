@@ -1,10 +1,10 @@
-import Arr "ArrayExtra";
+import Arr "util/ArrayExtra";
 import Array "mo:base/Array";
 import Debug "mo:base/Debug";
 import List "mo:base/List";
 import Nibble "util/Nibble";
 import Nat8 "mo:base/Nat8";
-import Key "trie/Key";
+import Key "Key";
 import Text "mo:base/Text";
 import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
@@ -14,15 +14,13 @@ import Keccak "util/Keccak";
 import Option "mo:base/Option";
 import Hex "util/Hex";
 import TrieMap "mo:base/TrieMap";
-import BaseHash "mo:base/Hash";
 import Nat32 "mo:base/Nat32";
 import Int "mo:base/Int";
-import Value "trie/Value";
-import Hash "trie/Hash";
+import Value "Value";
+import Hash "Hash";
 import Blob "mo:base/Blob";
 
 module {
-  public type MerklePatriciaTrie = Node;
   public type Trie = Node;
   type Value = Value.Value;
   type RlpEncoded = [Nat8];
@@ -70,8 +68,6 @@ module {
   /// In the case of ethereum this is keccak256(rlp(value))
   public type Key = Key.Key;
 
-  public type Proof = [[Nat8]];
-
   /// Key with prefix nibble indicating type and path length:
   /// prefix 0x00 extension, even
   /// prefix 0x1 extension, odd
@@ -80,93 +76,9 @@ module {
   /// This will always result in a even length, so it is save to convert into [Nat8]
   type EncodedKey = [Nibble];
 
+  /// Create an empty trie
   public func init() : Trie {
     #nul;
-  };
-
-  public func createProof(trie : Trie, key : Key) : Proof {
-    let path : Path = findPath(trie, key, null);
-    let stackSize = List.size(path.stack);
-    var size = stackSize + 1;
-    switch (path.mismatch) {
-      case (#nul) {};
-      case (_) { size += 1 };
-    };
-    var proof = Array.init<[Nat8]>(size, []);
-
-    if (path.remaining == []) {
-      proof[0] := nodeSerialize(path.node);
-    } else {
-      proof[0] := nodeSerialize(path.mismatch);
-    };
-
-    var i = 1;
-    for ((k, node) in List.toIter(path.stack)) {
-      proof[i] := nodeSerialize(node);
-      i += 1;
-    };
-
-    return Array.reverse(Array.freeze(proof));
-  };
-
-  func proofToText(proof : Proof) : Text {
-    Hex.toText2D(proof);
-  };
-
-  /// compare a sequence of bytes
-  func hashEqual(self : Hash, other : Hash) : Bool = self == other;
-
-  /// generate a 32-bit hash form a sequence of bytes
-  /// this takes the first 4 bytes and concatenates them
-  func hashHash(self : Hash) : BaseHash.Hash {
-    Blob.hash(self);
-  };
-
-  public type ProofResult = {
-    #included : Value;
-    #excluded;
-    #invalidProof;
-  };
-
-  public func verifyProof(root : Hash, key : Key, proof : Proof) : ProofResult {
-    let db = TrieMap.TrieMap<Hash, Node>(hashEqual, hashHash);
-    var first = true;
-    for (item in proof.vals()) {
-      let node = nodeDecode(item);
-      let hash1 = nodeHash(node);
-      db.put(hash1, node);
-      if (first and hash1.size() < 32) {
-        let hash2 = rootHash(node);
-        db.put(hash2, node);
-      };
-      first := false;
-    };
-
-    let path = findPathWithDb(#hash(root), key, null, db);
-
-    if (path.remaining.size() > 0) {
-      switch (path.node) {
-        case (#hash(hash)) {
-          return #invalidProof
-
-        };
-        // TODO: check if proof is invalid or an exclusion proof
-        case (_) { return #excluded };
-      };
-    };
-
-    switch (nodeValue(path.node)) {
-      case (null) { return #excluded };
-      case (?value) { return #included(value) };
-    };
-  };
-
-  public func proofResultToText(val : ProofResult) : Text {
-    switch (val) {
-      case (#included(value)) { "#included(" # Value.toHex(value) # ")" };
-      case (#excluded) { "#excluded" };
-      case (#invalidProof) { "#invalidProof" };
-    };
   };
 
   /// Deserialize RLP encoded node
@@ -207,6 +119,8 @@ module {
     };
   };
 
+  /// Convert raw values into a branch node
+  /// `raw` must contain 17 elements
   func rawToBranch(raw : [[Nat8]]) : Node {
     assert raw.size() == 17;
 
@@ -247,10 +161,12 @@ module {
     return #branch(branch);
   };
 
+  /// Delete a key from a trie
   public func delete(trie : Trie, key : Key) : Trie {
-    return put(trie, key, Value.empty); //TODO: implement
+    return put(trie, key, Value.empty);
   };
 
+  /// Add a value into a trie
   public func put(trie : Trie, key : Key, value : Value) : Trie {
     switch (trie) {
       case (#nul) {
@@ -389,6 +305,7 @@ module {
     Debug.trap("unreachable (end of findPath)");
   };
 
+  /// Create a new branch with two nodes
   func createBranch(a : Key, nodeA : Node, b : Key, nodeB : Node) : Node {
     var nodes = Array.init<Node>(16, #nul);
     let indexA = Key.toIndex(a);
@@ -403,6 +320,7 @@ module {
     };
   };
 
+  /// Create a new branch with a single node and a value
   func createBranchWithValue(a : Key, nodeA : Node, value : Value) : Node {
     var nodes = Array.init<Node>(16, #nul);
     nodes[Key.toIndex(a)] := nodeA;
@@ -414,6 +332,7 @@ module {
     };
   };
 
+  /// Change one node inside an existing branch
   func updateBranch(branch : Branch, key : Key, node : Node) : Node {
     var nodes = Array.thaw<Node>(branch.nodes);
     nodes[Key.toIndex(key)] := node;
@@ -424,6 +343,7 @@ module {
     });
   };
 
+  /// Change the value for a branch
   func updateBranchValue(branch : Branch, value : ?Value) : Node {
     return #branch({
       nodes = branch.nodes;
@@ -432,6 +352,7 @@ module {
     });
   };
 
+  /// Change the node an extension is pointing to
   func updateExtension(ext : Extension, newNode : Node) : Node {
     return #extension {
       key = ext.key;
@@ -440,22 +361,26 @@ module {
     };
   };
 
+  /// Create a leaf node
   public func createLeaf(key : Key, value : Value) : Node {
     return #leaf { key; value; var hash = null };
   };
 
+  /// Create an extension node
   func createExtension(key : Key, branch : Node) : Node {
     if (key == []) return branch;
     return #extension { key; node = branch; var hash = null };
   };
 
+  /// Get the value for a specific key
   public func get(trie : Trie, key : Key) : ?Value {
     let path = findPath(trie, key, null);
     if (path.remaining.size() > 0) return null;
     return nodeValue(path.node);
   };
 
-  func nodeValue(node : Node) : ?Value {
+  /// return the value of a node or null if no value is set
+  public func nodeValue(node : Node) : ?Value {
     switch (node) {
       case (#nul) { null };
       case (#branch(branch)) { branch.value };
@@ -466,7 +391,7 @@ module {
   };
 
   /// Function `H(x)` where `x` is `RLP(node)` and `H(x) = keccak256(x) if len(x) >= 32 else x`
-  func nodeHash(node : Node) : Hash {
+  public func nodeHash(node : Node) : Hash {
     switch (node) {
       case (#hash(hash)) { return hash };
       case (#branch(branch)) {

@@ -1,7 +1,7 @@
 [package]
 name = "merkle-patricia-trie"
 version = "0.1.0"
-description = "A Merkle Patricia Trie implementation Ethereum"
+description = "A Merkle Patricia Trie implementation following the Ethereum specification"
 repository = "https://github.com/f0i/merkle-patricia-trie.mo"
 
 [dependencies]

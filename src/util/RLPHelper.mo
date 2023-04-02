@@ -12,8 +12,8 @@ import RLPDecode "mo:rlp/rlp/decode";
 import RLPType "mo:rlp/types";
 import Hex "Hex";
 import Int "mo:base/Int";
-import Value "../trie/Value";
-import Hash "../trie/Hash";
+import Value "../Value";
+import Hash "../Hash";
 
 module {
 

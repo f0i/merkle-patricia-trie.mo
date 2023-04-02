@@ -2,14 +2,14 @@ import SHA3 "mo:sha3";
 import RLP "mo:rlp";
 import BaseBuffer "mo:base/Buffer";
 import Result "mo:base/Result";
-import Nibble "../util/Nibble";
+import Nibble "util/Nibble";
 import Nat8 "mo:base/Nat8";
 import Array "mo:base/Array";
 import Text "mo:base/Text";
 import Iter "mo:base/Iter";
 import Blob "mo:base/Blob";
 import Debug "mo:base/Debug";
-import Util "../util";
+import Util "util";
 import Option "mo:base/Option";
 
 module {
