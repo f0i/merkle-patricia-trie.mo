@@ -1,0 +1,10 @@
+[package]
+name = "merkle-patricia-trie"
+version = "0.1.0"
+description = "A Merkle Patricia Trie implementation Ethereum"
+repository = "https://github.com/f0i/merkle-patricia-trie.mo"
+
+[dependencies]
+base = "https://github.com/dfinity/motoko-base#0c5029bfcc6f8d416aebad6fcd0c1c3bc492b802"
+rlp = "https://github.com/relaxed04/rlp-motoko#master"
+sha3 = "https://github.com/hanbu97/motoko-sha3#master"
