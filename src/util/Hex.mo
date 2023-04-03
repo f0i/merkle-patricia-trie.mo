@@ -43,6 +43,13 @@ module {
         return #ok(Array.freeze(arr));
     };
 
+    public func toArrayUnsafe(hex : Text) : [Nat8] {
+        switch (toArray(hex)) {
+            case (#ok(data)) return data;
+            case (#err(msg)) Debug.trap("Hex.toArrayUnsafe: " # msg);
+        };
+    };
+
     func decodeNibble(c : Char) : ?Nat8 {
         switch (c) {
             case ('0') { ?0 };
