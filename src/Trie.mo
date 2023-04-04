@@ -27,6 +27,7 @@ module {
   type Nibble = Nibble.Nibble;
   type List<T> = List.List<T>;
   type TrieMap = TrieMap.TrieMap<Hash, Node>;
+  type Result<T, E> = Result.Result<T, E>;
 
   public type Node = {
     #nul;
@@ -168,38 +169,15 @@ module {
 
   /// Add a value into a trie
   public func put(trie : Trie, key : Key, value : Value) : Trie {
-    switch (trie) {
-      case (#nul) {
-        // Insert initial value
-        let newNode : Node = #leaf({
-          key;
-          value;
-          var hash = null;
-        });
-        return newNode;
-      };
-      case (_) {};
-    };
 
     // Find closest node
     let path = findPath(trie, key, null);
-    let { node; remaining; stack } = path;
-    var update = false; // Flag indicating if a value is set already and should be updated instead
+    let { node; remaining; stack; mismatch } = path;
 
-    let stuckOn = switch (node, stack) {
-      case (#leaf _, _) { update := true; node }; // update existing leaf
-      case (#branch _, _) { update := true; node }; // update existing branch value
-      case (_, null) {
-        trie;
-      };
-      case (_, ?((k, n), _)) {
-        switch (n) {
-          case (#branch branch) {
-            branch.nodes[Key.toIndex(k)];
-          };
-          case (_) { n };
-        };
-      };
+    let (stuckOn, update) = switch (node, mismatch) {
+      case (#leaf _, _) { (node, true) }; // update existing leaf
+      case (#branch _, _) { (node, true) }; // update existing branch value
+      case (_, mismatch) { (mismatch, false) };
     };
 
     // insert leaf
@@ -379,6 +357,20 @@ module {
     return nodeValue(path.node);
   };
 
+  /// Get the value for a specific key
+  public func getWithDb(trie : Trie, key : Key, db : DB) : Result<?Value, Text> {
+    let path = findPathWithDb(trie, key, null, db);
+    switch (path.node) {
+      case (#hash hash) {
+        return #err("Trie.getWithDb: Missing hash " # Hash.toHex(hash));
+      };
+      case (_) {
+        if (path.remaining.size() > 0) return #ok(null);
+        return #ok(nodeValue(path.node));
+      };
+    };
+  };
+
   /// return the value of a node or null if no value is set
   public func nodeValue(node : Node) : ?Value {
     switch (node) {
@@ -521,7 +513,7 @@ module {
       };
       case (#leaf leaf) {
         if (leaf.key == key) {
-          // matchin leaf
+          // matching leaf
           return {
             node = node;
             stack = stack;
@@ -563,7 +555,7 @@ module {
     };
   };
 
-  public func findPathWithDb(node : Node, key : Key, stack : List<(Key, Node)>, db : TrieMap) : Path {
+  public func findPathWithDb(node : Node, key : Key, stack : List<(Key, Node)>, db : DB) : Path {
     var path = findPath(node, key, stack);
 
     switch (path) {
@@ -707,5 +699,135 @@ module {
 
   public func valueToText(value : Value) : Text {
     "{}";
+  };
+
+  public type DB = {
+    put : (Hash, Node) -> ();
+    get : Hash -> ?Node;
+  };
+
+  public func putWithDB(trie : Trie, key : Key, value : Value, db : DB) : Result<Trie, Text> {
+    let path = findPathWithDb(trie, key, null, db);
+
+    let { node; remaining; stack; mismatch } = path;
+
+    let (stuckOn, update) = switch (node, mismatch) {
+      case (#leaf _, _) { (node, true) }; // update existing leaf
+      case (#branch _, _) { (node, true) }; // update existing branch value
+      case (#hash hash, _) {
+        return #err("missing node for hash " # Hash.toHex(hash));
+      };
+      case (_, mismatch) { (mismatch, false) };
+    };
+
+    var replacementNode : Node = switch (stuckOn) {
+      case (#nul) { createLeaf(remaining, value) };
+      case (#hash(hash)) { Debug.trap("Case #hash(_) already handled above") };
+      case (#branch branch) {
+        // replace existing
+        if (remaining != []) Debug.trap("Can't get stuck on a branch with non empty key: " # Key.toText(remaining));
+        updateBranchValue(branch, ?value);
+      };
+      case (#leaf leaf) {
+        let matching = Key.matchingLength(leaf.key, remaining);
+
+        // replace leaf with one of the following
+        if (update) {
+          // replace existing
+          createLeaf(leaf.key, value);
+        } else if (leaf.key == []) {
+          // branch(leaf.value)->new
+          let newLeaf = createLeaf(Key.slice(remaining, 1), value);
+          createBranchWithValue(remaining, newLeaf, leaf.value);
+        } else if (remaining == []) {
+          // branch(new.value)->leaf
+          let oldLeaf = createLeaf(Key.slice(leaf.key, 1), leaf.value);
+          createBranchWithValue(leaf.key, oldLeaf, value);
+        } else if (matching == 0) {
+          // branch->leaf/new
+          let newLeaf = createLeaf(Key.slice(remaining, 1), value);
+          let oldLeaf = createLeaf(Key.slice(leaf.key, 1), leaf.value);
+          createBranch(leaf.key, oldLeaf, remaining, newLeaf);
+        } else if (matching == leaf.key.size()) {
+          // extension->branch(leaf.value)->new
+          let newLeaf = createLeaf(Key.slice(remaining, matching + 1), value);
+          let newBranch = createBranchWithValue(Key.slice(remaining, matching), newLeaf, leaf.value);
+          createExtension(leaf.key, newBranch);
+        } else if (matching == remaining.size()) {
+          // extension->branch(new.value)->leaf
+          let oldLeaf = createLeaf(Key.slice(leaf.key, matching + 1), leaf.value);
+          let newBranch = createBranchWithValue(Key.slice(leaf.key, matching), oldLeaf, value);
+          createExtension(remaining, newBranch);
+        } else {
+          // extension->branch->leaf/new
+          let newLeaf = createLeaf(Key.slice(remaining, matching + 1), value);
+          let oldLeaf = createLeaf(Key.slice(leaf.key, matching + 1), leaf.value);
+          let newBranch = createBranch(Key.slice(leaf.key, matching), oldLeaf, Key.slice(remaining, matching), newLeaf);
+          createExtension(Key.take(remaining, matching), newBranch);
+        };
+      };
+      case (#extension ext) {
+        let matching = Key.matchingLength(ext.key, remaining);
+
+        if (remaining == []) {
+          // branch(value)->ext
+          let oldExt = createExtension(Key.slice(ext.key, 1), ext.node);
+          createBranchWithValue(ext.key, oldExt, value);
+        } else if (matching == 0) {
+          // branch->ext/new
+          let oldExt = createExtension(Key.slice(ext.key, 1), ext.node);
+          let newLeaf = createLeaf(Key.slice(remaining, 1), value);
+          createBranch(ext.key, oldExt, remaining, newLeaf);
+        } else if (matching == ext.key.size()) {
+          Debug.trap("Can't reach: if ext.key matches, it would have been followed");
+        } else if (matching == remaining.size()) {
+          // extension->branch(new.value)->ext
+          let oldExt = createExtension(Key.slice(ext.key, matching + 1), ext.node);
+          let newBranch = createBranchWithValue(Key.slice(ext.key, matching), oldExt, value);
+          createExtension(remaining, newBranch);
+        } else {
+          // extension->branch->ext/new
+          let oldExt = createExtension(Key.slice(ext.key, matching + 1), ext.node);
+          let newLeaf = createLeaf(Key.slice(remaining, matching + 1), value);
+          let newBranch = createBranch(Key.slice(ext.key, matching), oldExt, Key.slice(remaining, matching), newLeaf);
+          createExtension(Key.take(remaining, matching), newBranch);
+        };
+      };
+    };
+
+    // insert replacement node and update nodes in path.stack
+    var toUpdate = stack;
+    var hash = nodeHash(replacementNode);
+    db.put(hash, replacementNode);
+    replacementNode := #hash hash;
+
+    while (true) {
+      switch (toUpdate) {
+        case (?((key, #branch branch), tail)) {
+          replacementNode := updateBranch(branch, key, replacementNode); // TODO: check key
+          hash := nodeHash(replacementNode);
+          db.put(hash, replacementNode);
+          replacementNode := #hash hash;
+          toUpdate := tail;
+        };
+        case (?((key, #extension ext), tail)) {
+          replacementNode := updateExtension(ext, replacementNode);
+          hash := nodeHash(replacementNode);
+          db.put(hash, replacementNode);
+          replacementNode := #hash hash;
+          toUpdate := tail;
+        };
+        case (?((k, n), _)) {
+          Debug.trap("in findPath: expected #branch or #extension but got " # nodeToText(n) # " at " # Key.toText(k));
+        };
+        case (null) {
+          return #ok(replacementNode);
+        };
+      };
+    };
+
+    Debug.trap("unreachable (end of findPath)");
+
+    #err("TODO: implement");
   };
 };
