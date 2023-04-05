@@ -9,7 +9,7 @@
 type Hash = Blob
 ----
 
-
+Hash type
 
 [[empty]]
 == empty
@@ -19,7 +19,7 @@ type Hash = Blob
 let empty : xref:#type.Hash[Hash]
 ----
 
-
+Hash of an empty Node, empty array or null
 
 [[fromHex]]
 == fromHex
@@ -29,7 +29,7 @@ let empty : xref:#type.Hash[Hash]
 func fromHex(hex : Text) : ?xref:#type.Hash[Hash]
 ----
 
-
+Convert a hex Text into a Hash
 
 [[equal]]
 == equal
@@ -39,7 +39,7 @@ func fromHex(hex : Text) : ?xref:#type.Hash[Hash]
 func equal(self : xref:#type.Hash[Hash], other : xref:#type.Hash[Hash]) : Bool
 ----
 
-compare a sequence of bytes
+Compare a Hash to another Hash
 
 [[hash]]
 == hash
@@ -49,7 +49,7 @@ compare a sequence of bytes
 func hash(self : xref:#type.Hash[Hash]) : BaseHash.Hash
 ----
 
-generate a 32-bit hash
+Generate a 32-bit `mo:base/Hash`
 
 [[toArray]]
 == toArray
@@ -59,7 +59,7 @@ generate a 32-bit hash
 func toArray(value : xref:#type.Hash[Hash]) : pass:[[]Nat8pass:[]]
 ----
 
-
+Convert a Hash into a byte array
 
 [[toHex]]
 == toHex
@@ -69,5 +69,5 @@ func toArray(value : xref:#type.Hash[Hash]) : pass:[[]Nat8pass:[]]
 func toHex(value : xref:#type.Hash[Hash]) : Text
 ----
 
-
+Convert a Hash into a hex Text
 

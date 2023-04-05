@@ -50,5 +50,5 @@ Verify a proof
 func proofResultToText(val : xref:#type.ProofResult[ProofResult]) : Text
 ----
 
-
+Turn the ProofResult `val` into human readable Text
 

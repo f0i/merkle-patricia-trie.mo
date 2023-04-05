@@ -9,5 +9,6 @@
 func pairs<T>(iter : Iter.Iter<T>) : Iter.Iter<(T, T)>
 ----
 
-Access elements of an iterator in pairs
+Access elements of an iterator two at a time
+If `iter` contains an odd number of elements, the last one is discarded
 

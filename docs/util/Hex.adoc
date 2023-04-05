@@ -9,7 +9,7 @@
 func toText(bytes : pass:[[]Nat8pass:[]]) : Text
 ----
 
-
+Convert a byte array to hex Text
 
 [[toText2D]]
 == toText2D
@@ -19,7 +19,7 @@ func toText(bytes : pass:[[]Nat8pass:[]]) : Text
 func toText2D(bytess : pass:[[]pass:[[]Nat8pass:[]]pass:[]]) : Text
 ----
 
-
+Convert an array of byte arrays to hex Text
 
 [[toArray]]
 == toArray
@@ -29,7 +29,7 @@ func toText2D(bytess : pass:[[]pass:[[]Nat8pass:[]]pass:[]]) : Text
 func toArray(hex : Text) : Result.Result<pass:[[]Nat8pass:[]], Text>
 ----
 
-
+Convert hex Text into a byte array
 
 [[toArrayUnsafe]]
 == toArrayUnsafe
@@ -39,5 +39,6 @@ func toArray(hex : Text) : Result.Result<pass:[[]Nat8pass:[]], Text>
 func toArrayUnsafe(hex : Text) : pass:[[]Nat8pass:[]]
 ----
 
-
+Convert hex Text into a byte array
+Similar to `toArray` but traps if `hex` contains invalid characters
 

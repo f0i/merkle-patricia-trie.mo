@@ -19,7 +19,7 @@ func encodeHash(hash : xref:#type.Hash[Hash]) : pass:[[]Nat8pass:[]]
 func encodeValue(value : xref:#type.Value[Value]) : pass:[[]Nat8pass:[]]
 ----
 
-
+RLP encode a Value
 
 [[encode]]
 == encode
@@ -29,7 +29,7 @@ func encodeValue(value : xref:#type.Value[Value]) : pass:[[]Nat8pass:[]]
 func encode(array : pass:[[]Nat8pass:[]]) : pass:[[]Nat8pass:[]]
 ----
 
-
+RLP encode an array of bytes
 
 [[encodeEach]]
 == encodeEach
@@ -39,7 +39,7 @@ func encode(array : pass:[[]Nat8pass:[]]) : pass:[[]Nat8pass:[]]
 func encodeEach(arrays : pass:[[]pass:[[]Nat8pass:[]]pass:[]]) : pass:[[]pass:[[]Nat8pass:[]]pass:[]]
 ----
 
-
+RLP encode an array of byte arrays individually (does not encode the outer array)
 
 [[encodeEachHash]]
 == encodeEachHash
@@ -49,7 +49,7 @@ func encodeEach(arrays : pass:[[]pass:[[]Nat8pass:[]]pass:[]]) : pass:[[]pass:[[
 func encodeEachHash(arrays : pass:[[]xref:#type.Hash[Hash]pass:[]]) : pass:[[]pass:[[]Nat8pass:[]]pass:[]]
 ----
 
-
+RLP encode an array of hash values individually (does not encode the outer array)
 
 [[encodeOuter]]
 == encodeOuter
@@ -59,17 +59,7 @@ func encodeEachHash(arrays : pass:[[]xref:#type.Hash[Hash]pass:[]]) : pass:[[]pa
 func encodeOuter(arrays : pass:[[]pass:[[]Nat8pass:[]]pass:[]]) : pass:[[]Nat8pass:[]]
 ----
 
-
-
-[[decodeHash]]
-== decodeHash
-
-[source.no-repl,motoko,subs=+macros]
-----
-func decodeHash(input : pass:[[]Nat8pass:[]]) : xref:#type.Result[Result]<pass:[[]Nat8pass:[]], Text>
-----
-
-
+RLP encode an array of encoded values (assumes inner values to be encoded already)
 
 [[decodeValue]]
 == decodeValue
@@ -87,26 +77,6 @@ func decodeValue(input : pass:[[]Nat8pass:[]]) : xref:#type.Result[Result]<xref:
 [source.no-repl,motoko,subs=+macros]
 ----
 func decode(input : pass:[[]Nat8pass:[]]) : {#ok : pass:[[]pass:[[]Nat8pass:[]]pass:[]]; #err : Text}
-----
-
-
-
-[[getType]]
-== getType
-
-[source.no-repl,motoko,subs=+macros]
-----
-func getType(encodedData : pass:[[]Nat8pass:[]]) : xref:#type.RlpDataType[RlpDataType]
-----
-
-
-
-[[getPrefixInfo]]
-== getPrefixInfo
-
-[source.no-repl,motoko,subs=+macros]
-----
-func getPrefixInfo(encodedData : pass:[[]Nat8pass:[]]) : ?{ rlpType : xref:#type.RlpDataType[RlpDataType]; prefix : Nat; data : Nat }
 ----
 
 

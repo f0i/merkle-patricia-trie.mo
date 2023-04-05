@@ -9,7 +9,7 @@
 type Value = Blob
 ----
 
-
+Value type
 
 [[empty]]
 == empty
@@ -19,7 +19,7 @@ type Value = Blob
 let empty : xref:#type.Value[Value]
 ----
 
-
+An empty Value (no data)
 
 [[fromText]]
 == fromText
@@ -29,7 +29,7 @@ let empty : xref:#type.Value[Value]
 func fromText(text : Text) : xref:#type.Value[Value]
 ----
 
-
+Convert Text into a Value
 
 [[fromHex]]
 == fromHex
@@ -39,7 +39,7 @@ func fromText(text : Text) : xref:#type.Value[Value]
 func fromHex(hex : Text) : ?xref:#type.Value[Value]
 ----
 
-
+Convert a hex Text into a Value
 
 [[fromArray]]
 == fromArray
@@ -49,7 +49,7 @@ func fromHex(hex : Text) : ?xref:#type.Value[Value]
 func fromArray(data : pass:[[]Nat8pass:[]]) : xref:#type.Value[Value]
 ----
 
-
+Convert an array of bytes into a Value
 
 [[toArray]]
 == toArray
@@ -59,7 +59,7 @@ func fromArray(data : pass:[[]Nat8pass:[]]) : xref:#type.Value[Value]
 func toArray(value : xref:#type.Value[Value]) : pass:[[]Nat8pass:[]]
 ----
 
-
+Convert a Value into an array of bytes
 
 [[toHex]]
 == toHex
@@ -69,5 +69,5 @@ func toArray(value : xref:#type.Value[Value]) : pass:[[]Nat8pass:[]]
 func toHex(value : xref:#type.Value[Value]) : Text
 ----
 
-
+Convert a Value into hex Text
 

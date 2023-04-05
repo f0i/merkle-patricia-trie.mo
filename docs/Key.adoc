@@ -9,7 +9,7 @@
 type Key = pass:[[]xref:#type.Nibble[Nibble]pass:[]]
 ----
 
-
+Key data
 
 [[fromText]]
 == fromText
@@ -19,7 +19,7 @@ type Key = pass:[[]xref:#type.Nibble[Nibble]pass:[]]
 func fromText(text : Text) : xref:#type.Key[Key]
 ----
 
-
+Convert text into a Key
 
 [[fromKeyBytes]]
 == fromKeyBytes
@@ -29,7 +29,7 @@ func fromText(text : Text) : xref:#type.Key[Key]
 func fromKeyBytes(bytes : pass:[[]Nat8pass:[]]) : xref:#type.Key[Key]
 ----
 
-
+Convert an array of bytes into a Key
 
 [[matchingLength]]
 == matchingLength
@@ -39,7 +39,7 @@ func fromKeyBytes(bytes : pass:[[]Nat8pass:[]]) : xref:#type.Key[Key]
 func matchingLength(a : xref:#type.Key[Key], b : xref:#type.Key[Key]) : Nat
 ----
 
-Get the number of matchin nibbles
+Get the number of matching nibbles
 
 [[slice]]
 == slice
@@ -49,7 +49,8 @@ Get the number of matchin nibbles
 func slice(key : xref:#type.Key[Key], n : Nat) : xref:#type.Key[Key]
 ----
 
-
+Remove leading nibbles from a Key
+If there are less than `n` nibbles in the `key`, an empty Key is returned
 
 [[take]]
 == take
@@ -59,7 +60,8 @@ func slice(key : xref:#type.Key[Key], n : Nat) : xref:#type.Key[Key]
 func take(key : xref:#type.Key[Key], n : Nat) : xref:#type.Key[Key]
 ----
 
-
+Create a new key from the first `n` nibbles of `key`
+If `n` is larger than the number of nibbles in `key`, `key` is returned
 
 [[join]]
 == join
@@ -69,7 +71,7 @@ func take(key : xref:#type.Key[Key], n : Nat) : xref:#type.Key[Key]
 func join(a : xref:#type.Key[Key], b : xref:#type.Key[Key]) : xref:#type.Key[Key]
 ----
 
-
+Combine two keys
 
 [[append]]
 == append
@@ -79,7 +81,7 @@ func join(a : xref:#type.Key[Key], b : xref:#type.Key[Key]) : xref:#type.Key[Key
 func append(a : xref:#type.Key[Key], b : xref:#type.Nibble[Nibble]) : xref:#type.Key[Key]
 ----
 
-
+Create a new key by extending `a` by one nibble `b`
 
 [[toText]]
 == toText
@@ -89,7 +91,7 @@ func append(a : xref:#type.Key[Key], b : xref:#type.Nibble[Nibble]) : xref:#type
 func toText(key : xref:#type.Key[Key]) : Text
 ----
 
-
+Generate a human readable Text representation of a Key
 
 [[toIndex]]
 == toIndex
@@ -99,17 +101,18 @@ func toText(key : xref:#type.Key[Key]) : Text
 func toIndex(key : xref:#type.Key[Key]) : Nat
 ----
 
-get the first nibble of the key and turn it into a Nat for using as index
+Get the first nibble of the key and turn it into a Nat for using as index
 
 [[compactEncode]]
 == compactEncode
 
 [source.no-repl,motoko,subs=+macros]
 ----
-func compactEncode(nibbles : pass:[[]xref:#type.Nibble[Nibble]pass:[]], terminating : Bool) : pass:[[]Nat8pass:[]]
+func compactEncode(key : xref:#type.Key[Key], terminating : Bool) : pass:[[]Nat8pass:[]]
 ----
 
-
+Encode a Key into a compact encoded array of bytes
+see <https://ethereum.org/en/developers/docs/data-structures-and-encoding/patricia-merkle-trie/#specification>
 
 [[compactDecode]]
 == compactDecode
@@ -119,5 +122,6 @@ func compactEncode(nibbles : pass:[[]xref:#type.Nibble[Nibble]pass:[]], terminat
 func compactDecode(encoded : Blob) : { key : xref:#type.Key[Key]; terminating : Bool }
 ----
 
-
+Decode a compact encoded array of bytes
+see <https://ethereum.org/en/developers/docs/data-structures-and-encoding/patricia-merkle-trie/#specification>
 

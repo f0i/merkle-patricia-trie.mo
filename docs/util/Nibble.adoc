@@ -9,7 +9,8 @@
 type Nibble = Nat8
 ----
 
-
+Nibble data type
+must only contain values from 0..15 (lower 4 bits)
 
 [[fromArray]]
 == fromArray
@@ -19,7 +20,7 @@ type Nibble = Nat8
 func fromArray(arr : pass:[[]Nat8pass:[]]) : pass:[[]xref:#type.Nibble[Nibble]pass:[]]
 ----
 
-
+Convert an array of bytes into an array of Nibble
 
 [[toArray]]
 == toArray
@@ -81,7 +82,7 @@ Compare two arrays of nibbles
 func matchingNibbleLength(a : pass:[[]xref:#type.Nibble[Nibble]pass:[]], b : pass:[[]xref:#type.Nibble[Nibble]pass:[]]) : Nat
 ----
 
-
+Count the number of nibbles matching between `a` and `b`
 
 [[doKeysMatch]]
 == doKeysMatch
@@ -91,7 +92,7 @@ func matchingNibbleLength(a : pass:[[]xref:#type.Nibble[Nibble]pass:[]], b : pas
 func doKeysMatch(a : pass:[[]xref:#type.Nibble[Nibble]pass:[]], b : pass:[[]xref:#type.Nibble[Nibble]pass:[]]) : Bool
 ----
 
-
+Count the number of nibbles matching between `a` and `b`
 
 [[replaceHigh]]
 == replaceHigh

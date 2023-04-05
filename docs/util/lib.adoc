@@ -9,7 +9,8 @@
 func unwrap<T, E>(input : xref:#type.Result[Result]<T, E>) : T
 ----
 
-
+Get the success value from a Result
+Traps if result is #err
 
 [[dropBytes]]
 == dropBytes
@@ -19,7 +20,8 @@ func unwrap<T, E>(input : xref:#type.Result[Result]<T, E>) : T
 func dropBytes(data : pass:[[]Nat8pass:[]], n : Nat) : pass:[[]Nat8pass:[]]
 ----
 
-
+Drop `n` elements from an array of bytes
+Returns an empty array if n is greater than the size of `data`
 
 [[takeBytes]]
 == takeBytes
@@ -29,5 +31,6 @@ func dropBytes(data : pass:[[]Nat8pass:[]], n : Nat) : pass:[[]Nat8pass:[]]
 func takeBytes(data : pass:[[]Nat8pass:[]], n : Nat) : pass:[[]Nat8pass:[]]
 ----
 
-
+Take `n` bytes from an array of bytes
+Returns `data` if n is greater than the size of `data`
 

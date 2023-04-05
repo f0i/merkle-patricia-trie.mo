@@ -6,8 +6,8 @@
 
 [source.no-repl,motoko,subs=+macros]
 ----
-func keccak(data : xref:#type.Buffer[Buffer]) : xref:#type.Hash[Hash]
+func keccak(data : pass:[[]Nat8pass:[]]) : xref:#type.Hash[Hash]
 ----
 
-
+Calculate keccak hash of a byte array
 

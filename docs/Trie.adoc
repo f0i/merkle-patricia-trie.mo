@@ -19,17 +19,7 @@ type Trie = xref:#type.Node[Node]
 type Node = {#nul; #branch : xref:#type.Branch[Branch]; #leaf : xref:#type.Leaf[Leaf]; #extension : xref:#type.Extension[Extension]; #hash : xref:#type.Hash[Hash]}
 ----
 
-
-
-[[type.PartialNode]]
-== PartialNode
-
-[source.no-repl,motoko,subs=+macros]
-----
-type PartialNode = {#nul; #branch : xref:#type.Branch[Branch]; #leaf : xref:#type.Leaf[Leaf]; #extension : xref:#type.Extension[Extension]}
-----
-
-
+A Node object
 
 [[type.Branch]]
 == Branch
@@ -39,7 +29,7 @@ type PartialNode = {#nul; #branch : xref:#type.Branch[Branch]; #leaf : xref:#typ
 type Branch = { nodes : pass:[[]xref:#type.Node[Node]pass:[]]; value : ?xref:#type.Value[Value]; var hash : ?xref:#type.Hash[Hash] }
 ----
 
-
+A Branch node
 
 [[type.Leaf]]
 == Leaf
@@ -49,28 +39,17 @@ type Branch = { nodes : pass:[[]xref:#type.Node[Node]pass:[]]; value : ?xref:#ty
 type Leaf = { key : xref:#type.Key[Key]; value : xref:#type.Value[Value]; var hash : ?xref:#type.Hash[Hash] }
 ----
 
+A Leaf node
 
-
-[[type.Hash]]
-== Hash
-
-[source.no-repl,motoko,subs=+macros]
-----
-type Hash = xref:Hash.adoc#type.Hash[Hash.Hash]
-----
-
-
-
-[[type.Key]]
-== Key
+[[type.Extension]]
+== Extension
 
 [source.no-repl,motoko,subs=+macros]
 ----
-type Key = xref:Key.adoc#type.Key[Key.Key]
+type Extension = { key : xref:#type.Key[Key]; node : xref:#type.Node[Node]; var hash : ?xref:#type.Hash[Hash] }
 ----
 
-Key describing a path in the trie
-In the case of ethereum this is keccak256(rlp(value))
+An Extension node
 
 [[init]]
 == init
@@ -111,6 +90,8 @@ func deleteWithDB(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key], db : 
 ----
 
 Delete a key from a trie
+Similar to  the `delete` function, but uses a DB to store hash/Node pairs
+This should not be mixed with `put` or `delete` function or it can cause invalid tries or traps!
 
 [[put]]
 == put
@@ -180,7 +161,7 @@ Function `H(x)` where `x` is `RLP(node)` and `H(x) = keccak256(x) if len(x) >= 3
 func nodeSerialize(node : xref:#type.Node[Node]) : pass:[[]Nat8pass:[]]
 ----
 
-
+RLP encode a Node
 
 [[rootHash]]
 == rootHash
@@ -190,7 +171,7 @@ func nodeSerialize(node : xref:#type.Node[Node]) : pass:[[]Nat8pass:[]]
 func rootHash(trie : xref:#type.Trie[Trie]) : xref:#type.Hash[Hash]
 ----
 
-
+Get a root hash of a Trie
 
 [[hashHex]]
 == hashHex
@@ -200,7 +181,7 @@ func rootHash(trie : xref:#type.Trie[Trie]) : xref:#type.Hash[Hash]
 func hashHex(trie : xref:#type.Trie[Trie]) : Text
 ----
 
-
+Get root hash as a hex Text
 
 [[type.Path]]
 == Path
@@ -210,7 +191,7 @@ func hashHex(trie : xref:#type.Trie[Trie]) : Text
 type Path = { node : xref:#type.Node[Node]; stack : xref:#type.List[List]<(xref:#type.Key[Key], xref:#type.Node[Node])>; remaining : xref:#type.Key[Key]; mismatch : xref:#type.Node[Node] }
 ----
 
-
+Internal information from querying a trie
 
 [[findPath]]
 == findPath
@@ -232,7 +213,8 @@ returned as `stack` and the rest of the key will be returned as `remaining`.
 func findPathWithDB(node : xref:#type.Node[Node], key : xref:#type.Key[Key], stack : xref:#type.List[List]<(xref:#type.Key[Key], xref:#type.Node[Node])>, db : xref:#type.DB[DB]) : xref:#type.Path[Path]
 ----
 
-
+Find the a path in a node and return the path to get there.
+Similar to `findPath`, but also looks up nodes in a DB
 
 [[toIter]]
 == toIter
@@ -242,7 +224,9 @@ func findPathWithDB(node : xref:#type.Node[Node], key : xref:#type.Key[Key], sta
 func toIter(trie : xref:#type.Trie[Trie]) : Iter.Iter<(xref:#type.Key[Key], xref:#type.Value[Value])>
 ----
 
-
+Get an Iter to get all Key/Value pairs
+This should only be called on a tree build with `put` (not `putWithDB`),
+otherwise it can cause a trap!
 
 [[isEmpty]]
 == isEmpty
@@ -252,7 +236,7 @@ func toIter(trie : xref:#type.Trie[Trie]) : Iter.Iter<(xref:#type.Key[Key], xref
 func isEmpty(trie : xref:#type.Trie[Trie]) : Bool
 ----
 
-
+Check if a Trie is empty
 
 [[nodeEqual]]
 == nodeEqual
@@ -262,7 +246,7 @@ func isEmpty(trie : xref:#type.Trie[Trie]) : Bool
 func nodeEqual(a : xref:#type.Node[Node], b : xref:#type.Node[Node]) : Bool
 ----
 
-
+Check if Node `a` is equal to Node `b`
 
 [[equal]]
 == equal
@@ -272,7 +256,7 @@ func nodeEqual(a : xref:#type.Node[Node], b : xref:#type.Node[Node]) : Bool
 func equal(a : xref:#type.Trie[Trie], b : xref:#type.Trie[Trie]) : Bool
 ----
 
-
+Check if Trie `a` is equal to Trie `b`
 
 [[nodeToText]]
 == nodeToText
@@ -282,7 +266,7 @@ func equal(a : xref:#type.Trie[Trie], b : xref:#type.Trie[Trie]) : Bool
 func nodeToText(node : xref:#type.Node[Node]) : Text
 ----
 
-
+Get a node as a human readable Text
 
 [[pathToText]]
 == pathToText
@@ -292,7 +276,7 @@ func nodeToText(node : xref:#type.Node[Node]) : Text
 func pathToText(path : xref:#type.Path[Path]) : Text
 ----
 
-
+Get path info as a human readable Text
 
 [[valueToText]]
 == valueToText
@@ -302,7 +286,7 @@ func pathToText(path : xref:#type.Path[Path]) : Text
 func valueToText(value : xref:#type.Value[Value]) : Text
 ----
 
-
+Get placeholder text for any value
 
 [[type.DB]]
 == DB
@@ -312,7 +296,7 @@ func valueToText(value : xref:#type.Value[Value]) : Text
 type DB = { put : (xref:#type.Hash[Hash], xref:#type.Node[Node]) -> (); get : xref:#type.Hash[Hash] -> ?xref:#type.Node[Node] }
 ----
 
-
+Interface for a database
 
 [[putWithDB]]
 == putWithDB
@@ -322,5 +306,7 @@ type DB = { put : (xref:#type.Hash[Hash], xref:#type.Node[Node]) -> (); get : xr
 func putWithDB(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key], value : xref:#type.Value[Value], db : xref:#type.DB[DB]) : xref:#type.Result[Result]<xref:#type.Trie[Trie], Text>
 ----
 
-
+Add a value into a trie
+Similar to  the `put` function, but uses a DB to store hash/Node pairs
+This should not be mixed with `put` or `delete` function or it can cause invalid tries or traps!
 
