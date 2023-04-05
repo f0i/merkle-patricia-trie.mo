@@ -1,0 +1,23 @@
+[[module.util/rlp/encode]]
+= util/rlp/encode
+
+[[encode]]
+== encode
+
+[source.no-repl,motoko,subs=+macros]
+----
+func encode(input : Types.Input) : xref:#type.Result[Result]<Types.Uint8Array, Text>
+----
+
+
+
+[[encodeLength]]
+== encodeLength
+
+[source.no-repl,motoko,subs=+macros]
+----
+func encodeLength(len : Nat, offset : Nat) : xref:#type.Result[Result]<Types.Uint8Array, Text>
+----
+
+
+

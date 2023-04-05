@@ -1,0 +1,13 @@
+[[module.util/IterExtra]]
+= util/IterExtra
+
+[[pairs]]
+== pairs
+
+[source.no-repl,motoko,subs=+macros]
+----
+func pairs<T>(iter : Iter.Iter<T>) : Iter.Iter<(T, T)>
+----
+
+Access elements of an iterator in pairs
+

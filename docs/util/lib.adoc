@@ -1,0 +1,33 @@
+[[module.util/lib]]
+= util/lib
+
+[[unwrap]]
+== unwrap
+
+[source.no-repl,motoko,subs=+macros]
+----
+func unwrap<T, E>(input : xref:#type.Result[Result]<T, E>) : T
+----
+
+
+
+[[dropBytes]]
+== dropBytes
+
+[source.no-repl,motoko,subs=+macros]
+----
+func dropBytes(data : pass:[[]Nat8pass:[]], n : Nat) : pass:[[]Nat8pass:[]]
+----
+
+
+
+[[takeBytes]]
+== takeBytes
+
+[source.no-repl,motoko,subs=+macros]
+----
+func takeBytes(data : pass:[[]Nat8pass:[]], n : Nat) : pass:[[]Nat8pass:[]]
+----
+
+
+

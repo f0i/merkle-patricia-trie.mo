@@ -1,0 +1,13 @@
+[[module.util/ArrayExtra]]
+= util/ArrayExtra
+
+[[last]]
+== last
+
+[source.no-repl,motoko,subs=+macros]
+----
+func last<T>(arr : pass:[[]Tpass:[]]) : ?T
+----
+
+
+

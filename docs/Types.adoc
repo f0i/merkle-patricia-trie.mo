@@ -1,0 +1,13 @@
+[[module.Types]]
+= Types
+
+[[type.EmbeddedNode]]
+== EmbeddedNode
+
+[source.no-repl,motoko,subs=+macros]
+----
+type EmbeddedNode = {#Buffer; #BufferArr}
+----
+
+
+

@@ -1,0 +1,54 @@
+[[module.Proof]]
+= Proof
+
+[[type.Proof]]
+== Proof
+
+[source.no-repl,motoko,subs=+macros]
+----
+type Proof = pass:[[]pass:[[]Nat8pass:[]]pass:[]]
+----
+
+Proof data
+
+[[type.ProofResult]]
+== ProofResult
+
+[source.no-repl,motoko,subs=+macros]
+----
+type ProofResult = {#included : xref:#type.Value[Value]; #excluded; #invalidProof}
+----
+
+Result of a proof verification
+
+[[create]]
+== create
+
+[source.no-repl,motoko,subs=+macros]
+----
+func create(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key]) : xref:#type.Proof[Proof]
+----
+
+Create a proof
+`trie` must be a full trie (no #hash node in the path of `key`)
+
+[[verify]]
+== verify
+
+[source.no-repl,motoko,subs=+macros]
+----
+func verify(root : xref:#type.Hash[Hash], key : xref:#type.Key[Key], proof : xref:#type.Proof[Proof]) : xref:#type.ProofResult[ProofResult]
+----
+
+Verify a proof
+
+[[proofResultToText]]
+== proofResultToText
+
+[source.no-repl,motoko,subs=+macros]
+----
+func proofResultToText(val : xref:#type.ProofResult[ProofResult]) : Text
+----
+
+
+

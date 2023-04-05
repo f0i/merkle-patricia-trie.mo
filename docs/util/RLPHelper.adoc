@@ -1,0 +1,113 @@
+[[module.util/RLPHelper]]
+= util/RLPHelper
+
+[[encodeHash]]
+== encodeHash
+
+[source.no-repl,motoko,subs=+macros]
+----
+func encodeHash(hash : xref:#type.Hash[Hash]) : pass:[[]Nat8pass:[]]
+----
+
+
+
+[[encodeValue]]
+== encodeValue
+
+[source.no-repl,motoko,subs=+macros]
+----
+func encodeValue(value : xref:#type.Value[Value]) : pass:[[]Nat8pass:[]]
+----
+
+
+
+[[encode]]
+== encode
+
+[source.no-repl,motoko,subs=+macros]
+----
+func encode(array : pass:[[]Nat8pass:[]]) : pass:[[]Nat8pass:[]]
+----
+
+
+
+[[encodeEach]]
+== encodeEach
+
+[source.no-repl,motoko,subs=+macros]
+----
+func encodeEach(arrays : pass:[[]pass:[[]Nat8pass:[]]pass:[]]) : pass:[[]pass:[[]Nat8pass:[]]pass:[]]
+----
+
+
+
+[[encodeEachHash]]
+== encodeEachHash
+
+[source.no-repl,motoko,subs=+macros]
+----
+func encodeEachHash(arrays : pass:[[]xref:#type.Hash[Hash]pass:[]]) : pass:[[]pass:[[]Nat8pass:[]]pass:[]]
+----
+
+
+
+[[encodeOuter]]
+== encodeOuter
+
+[source.no-repl,motoko,subs=+macros]
+----
+func encodeOuter(arrays : pass:[[]pass:[[]Nat8pass:[]]pass:[]]) : pass:[[]Nat8pass:[]]
+----
+
+
+
+[[decodeHash]]
+== decodeHash
+
+[source.no-repl,motoko,subs=+macros]
+----
+func decodeHash(input : pass:[[]Nat8pass:[]]) : xref:#type.Result[Result]<pass:[[]Nat8pass:[]], Text>
+----
+
+
+
+[[decodeValue]]
+== decodeValue
+
+[source.no-repl,motoko,subs=+macros]
+----
+func decodeValue(input : pass:[[]Nat8pass:[]]) : xref:#type.Result[Result]<xref:#type.Value[Value], Text>
+----
+
+
+
+[[decode]]
+== decode
+
+[source.no-repl,motoko,subs=+macros]
+----
+func decode(input : pass:[[]Nat8pass:[]]) : {#ok : pass:[[]pass:[[]Nat8pass:[]]pass:[]]; #err : Text}
+----
+
+
+
+[[getType]]
+== getType
+
+[source.no-repl,motoko,subs=+macros]
+----
+func getType(encodedData : pass:[[]Nat8pass:[]]) : xref:#type.RlpDataType[RlpDataType]
+----
+
+
+
+[[getPrefixInfo]]
+== getPrefixInfo
+
+[source.no-repl,motoko,subs=+macros]
+----
+func getPrefixInfo(encodedData : pass:[[]Nat8pass:[]]) : ?{ rlpType : xref:#type.RlpDataType[RlpDataType]; prefix : Nat; data : Nat }
+----
+
+
+

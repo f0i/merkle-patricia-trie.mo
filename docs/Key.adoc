@@ -1,0 +1,123 @@
+[[module.Key]]
+= Key
+
+[[type.Key]]
+== Key
+
+[source.no-repl,motoko,subs=+macros]
+----
+type Key = pass:[[]xref:#type.Nibble[Nibble]pass:[]]
+----
+
+
+
+[[fromText]]
+== fromText
+
+[source.no-repl,motoko,subs=+macros]
+----
+func fromText(text : Text) : xref:#type.Key[Key]
+----
+
+
+
+[[fromKeyBytes]]
+== fromKeyBytes
+
+[source.no-repl,motoko,subs=+macros]
+----
+func fromKeyBytes(bytes : pass:[[]Nat8pass:[]]) : xref:#type.Key[Key]
+----
+
+
+
+[[matchingLength]]
+== matchingLength
+
+[source.no-repl,motoko,subs=+macros]
+----
+func matchingLength(a : xref:#type.Key[Key], b : xref:#type.Key[Key]) : Nat
+----
+
+Get the number of matchin nibbles
+
+[[slice]]
+== slice
+
+[source.no-repl,motoko,subs=+macros]
+----
+func slice(key : xref:#type.Key[Key], n : Nat) : xref:#type.Key[Key]
+----
+
+
+
+[[take]]
+== take
+
+[source.no-repl,motoko,subs=+macros]
+----
+func take(key : xref:#type.Key[Key], n : Nat) : xref:#type.Key[Key]
+----
+
+
+
+[[join]]
+== join
+
+[source.no-repl,motoko,subs=+macros]
+----
+func join(a : xref:#type.Key[Key], b : xref:#type.Key[Key]) : xref:#type.Key[Key]
+----
+
+
+
+[[append]]
+== append
+
+[source.no-repl,motoko,subs=+macros]
+----
+func append(a : xref:#type.Key[Key], b : xref:#type.Nibble[Nibble]) : xref:#type.Key[Key]
+----
+
+
+
+[[toText]]
+== toText
+
+[source.no-repl,motoko,subs=+macros]
+----
+func toText(key : xref:#type.Key[Key]) : Text
+----
+
+
+
+[[toIndex]]
+== toIndex
+
+[source.no-repl,motoko,subs=+macros]
+----
+func toIndex(key : xref:#type.Key[Key]) : Nat
+----
+
+get the first nibble of the key and turn it into a Nat for using as index
+
+[[compactEncode]]
+== compactEncode
+
+[source.no-repl,motoko,subs=+macros]
+----
+func compactEncode(nibbles : pass:[[]xref:#type.Nibble[Nibble]pass:[]], terminating : Bool) : pass:[[]Nat8pass:[]]
+----
+
+
+
+[[compactDecode]]
+== compactDecode
+
+[source.no-repl,motoko,subs=+macros]
+----
+func compactDecode(encoded : Blob) : { key : xref:#type.Key[Key]; terminating : Bool }
+----
+
+
+

@@ -1,0 +1,73 @@
+[[module.Value]]
+= Value
+
+[[type.Value]]
+== Value
+
+[source.no-repl,motoko,subs=+macros]
+----
+type Value = Blob
+----
+
+
+
+[[empty]]
+== empty
+
+[source.no-repl,motoko,subs=+macros]
+----
+let empty : xref:#type.Value[Value]
+----
+
+
+
+[[fromText]]
+== fromText
+
+[source.no-repl,motoko,subs=+macros]
+----
+func fromText(text : Text) : xref:#type.Value[Value]
+----
+
+
+
+[[fromHex]]
+== fromHex
+
+[source.no-repl,motoko,subs=+macros]
+----
+func fromHex(hex : Text) : ?xref:#type.Value[Value]
+----
+
+
+
+[[fromArray]]
+== fromArray
+
+[source.no-repl,motoko,subs=+macros]
+----
+func fromArray(data : pass:[[]Nat8pass:[]]) : xref:#type.Value[Value]
+----
+
+
+
+[[toArray]]
+== toArray
+
+[source.no-repl,motoko,subs=+macros]
+----
+func toArray(value : xref:#type.Value[Value]) : pass:[[]Nat8pass:[]]
+----
+
+
+
+[[toHex]]
+== toHex
+
+[source.no-repl,motoko,subs=+macros]
+----
+func toHex(value : xref:#type.Value[Value]) : Text
+----
+
+
+

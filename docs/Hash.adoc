@@ -1,0 +1,73 @@
+[[module.Hash]]
+= Hash
+
+[[type.Hash]]
+== Hash
+
+[source.no-repl,motoko,subs=+macros]
+----
+type Hash = Blob
+----
+
+
+
+[[empty]]
+== empty
+
+[source.no-repl,motoko,subs=+macros]
+----
+let empty : xref:#type.Hash[Hash]
+----
+
+
+
+[[fromHex]]
+== fromHex
+
+[source.no-repl,motoko,subs=+macros]
+----
+func fromHex(hex : Text) : ?xref:#type.Hash[Hash]
+----
+
+
+
+[[equal]]
+== equal
+
+[source.no-repl,motoko,subs=+macros]
+----
+func equal(self : xref:#type.Hash[Hash], other : xref:#type.Hash[Hash]) : Bool
+----
+
+compare a sequence of bytes
+
+[[hash]]
+== hash
+
+[source.no-repl,motoko,subs=+macros]
+----
+func hash(self : xref:#type.Hash[Hash]) : BaseHash.Hash
+----
+
+generate a 32-bit hash
+
+[[toArray]]
+== toArray
+
+[source.no-repl,motoko,subs=+macros]
+----
+func toArray(value : xref:#type.Hash[Hash]) : pass:[[]Nat8pass:[]]
+----
+
+
+
+[[toHex]]
+== toHex
+
+[source.no-repl,motoko,subs=+macros]
+----
+func toHex(value : xref:#type.Hash[Hash]) : Text
+----
+
+
+

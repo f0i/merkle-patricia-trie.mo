@@ -1,0 +1,43 @@
+[[module.util/Hex]]
+= util/Hex
+
+[[toText]]
+== toText
+
+[source.no-repl,motoko,subs=+macros]
+----
+func toText(bytes : pass:[[]Nat8pass:[]]) : Text
+----
+
+
+
+[[toText2D]]
+== toText2D
+
+[source.no-repl,motoko,subs=+macros]
+----
+func toText2D(bytess : pass:[[]pass:[[]Nat8pass:[]]pass:[]]) : Text
+----
+
+
+
+[[toArray]]
+== toArray
+
+[source.no-repl,motoko,subs=+macros]
+----
+func toArray(hex : Text) : Result.Result<pass:[[]Nat8pass:[]], Text>
+----
+
+
+
+[[toArrayUnsafe]]
+== toArrayUnsafe
+
+[source.no-repl,motoko,subs=+macros]
+----
+func toArrayUnsafe(hex : Text) : pass:[[]Nat8pass:[]]
+----
+
+
+

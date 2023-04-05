@@ -1,0 +1,326 @@
+[[module.Trie]]
+= Trie
+
+[[type.Trie]]
+== Trie
+
+[source.no-repl,motoko,subs=+macros]
+----
+type Trie = xref:#type.Node[Node]
+----
+
+
+
+[[type.Node]]
+== Node
+
+[source.no-repl,motoko,subs=+macros]
+----
+type Node = {#nul; #branch : xref:#type.Branch[Branch]; #leaf : xref:#type.Leaf[Leaf]; #extension : xref:#type.Extension[Extension]; #hash : xref:#type.Hash[Hash]}
+----
+
+
+
+[[type.PartialNode]]
+== PartialNode
+
+[source.no-repl,motoko,subs=+macros]
+----
+type PartialNode = {#nul; #branch : xref:#type.Branch[Branch]; #leaf : xref:#type.Leaf[Leaf]; #extension : xref:#type.Extension[Extension]}
+----
+
+
+
+[[type.Branch]]
+== Branch
+
+[source.no-repl,motoko,subs=+macros]
+----
+type Branch = { nodes : pass:[[]xref:#type.Node[Node]pass:[]]; value : ?xref:#type.Value[Value]; var hash : ?xref:#type.Hash[Hash] }
+----
+
+
+
+[[type.Leaf]]
+== Leaf
+
+[source.no-repl,motoko,subs=+macros]
+----
+type Leaf = { key : xref:#type.Key[Key]; value : xref:#type.Value[Value]; var hash : ?xref:#type.Hash[Hash] }
+----
+
+
+
+[[type.Hash]]
+== Hash
+
+[source.no-repl,motoko,subs=+macros]
+----
+type Hash = xref:Hash.adoc#type.Hash[Hash.Hash]
+----
+
+
+
+[[type.Key]]
+== Key
+
+[source.no-repl,motoko,subs=+macros]
+----
+type Key = xref:Key.adoc#type.Key[Key.Key]
+----
+
+Key describing a path in the trie
+In the case of ethereum this is keccak256(rlp(value))
+
+[[init]]
+== init
+
+[source.no-repl,motoko,subs=+macros]
+----
+func init() : xref:#type.Trie[Trie]
+----
+
+Create an empty trie
+
+[[nodeDecode]]
+== nodeDecode
+
+[source.no-repl,motoko,subs=+macros]
+----
+func nodeDecode(rlpData : pass:[[]Nat8pass:[]]) : xref:#type.Node[Node]
+----
+
+Deserialize RLP encoded node
+
+[[delete]]
+== delete
+
+[source.no-repl,motoko,subs=+macros]
+----
+func delete(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key]) : xref:#type.Trie[Trie]
+----
+
+Delete a key from a trie
+
+[[deleteWithDB]]
+== deleteWithDB
+
+[source.no-repl,motoko,subs=+macros]
+----
+func deleteWithDB(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key], db : xref:#type.DB[DB]) : xref:#type.Result[Result]<xref:#type.Trie[Trie], Text>
+----
+
+Delete a key from a trie
+
+[[put]]
+== put
+
+[source.no-repl,motoko,subs=+macros]
+----
+func put(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key], value : xref:#type.Value[Value]) : xref:#type.Trie[Trie]
+----
+
+Add a value into a trie
+
+[[createLeaf]]
+== createLeaf
+
+[source.no-repl,motoko,subs=+macros]
+----
+func createLeaf(key : xref:#type.Key[Key], value : xref:#type.Value[Value]) : xref:#type.Node[Node]
+----
+
+Create a leaf node
+
+[[get]]
+== get
+
+[source.no-repl,motoko,subs=+macros]
+----
+func get(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key]) : ?xref:#type.Value[Value]
+----
+
+Get the value for a specific key
+
+[[getWithDB]]
+== getWithDB
+
+[source.no-repl,motoko,subs=+macros]
+----
+func getWithDB(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key], db : xref:#type.DB[DB]) : xref:#type.Result[Result]<?xref:#type.Value[Value], Text>
+----
+
+Get the value for a specific key
+
+[[nodeValue]]
+== nodeValue
+
+[source.no-repl,motoko,subs=+macros]
+----
+func nodeValue(node : xref:#type.Node[Node]) : ?xref:#type.Value[Value]
+----
+
+return the value of a node or null if no value is set
+
+[[nodeHash]]
+== nodeHash
+
+[source.no-repl,motoko,subs=+macros]
+----
+func nodeHash(node : xref:#type.Node[Node]) : xref:#type.Hash[Hash]
+----
+
+Function `H(x)` where `x` is `RLP(node)` and `H(x) = keccak256(x) if len(x) >= 32 else x`
+
+[[nodeSerialize]]
+== nodeSerialize
+
+[source.no-repl,motoko,subs=+macros]
+----
+func nodeSerialize(node : xref:#type.Node[Node]) : pass:[[]Nat8pass:[]]
+----
+
+
+
+[[rootHash]]
+== rootHash
+
+[source.no-repl,motoko,subs=+macros]
+----
+func rootHash(trie : xref:#type.Trie[Trie]) : xref:#type.Hash[Hash]
+----
+
+
+
+[[hashHex]]
+== hashHex
+
+[source.no-repl,motoko,subs=+macros]
+----
+func hashHex(trie : xref:#type.Trie[Trie]) : Text
+----
+
+
+
+[[type.Path]]
+== Path
+
+[source.no-repl,motoko,subs=+macros]
+----
+type Path = { node : xref:#type.Node[Node]; stack : xref:#type.List[List]<(xref:#type.Key[Key], xref:#type.Node[Node])>; remaining : xref:#type.Key[Key]; mismatch : xref:#type.Node[Node] }
+----
+
+
+
+[[findPath]]
+== findPath
+
+[source.no-repl,motoko,subs=+macros]
+----
+func findPath(node : xref:#type.Node[Node], key : xref:#type.Key[Key], stack : xref:#type.List[List]<(xref:#type.Key[Key], xref:#type.Node[Node])>) : xref:#type.Path[Path]
+----
+
+Find the a path in a node and return the path to get there.
+If no node was found at the given key, the part that exists will be
+returned as `stack` and the rest of the key will be returned as `remaining`.
+
+[[findPathWithDB]]
+== findPathWithDB
+
+[source.no-repl,motoko,subs=+macros]
+----
+func findPathWithDB(node : xref:#type.Node[Node], key : xref:#type.Key[Key], stack : xref:#type.List[List]<(xref:#type.Key[Key], xref:#type.Node[Node])>, db : xref:#type.DB[DB]) : xref:#type.Path[Path]
+----
+
+
+
+[[toIter]]
+== toIter
+
+[source.no-repl,motoko,subs=+macros]
+----
+func toIter(trie : xref:#type.Trie[Trie]) : Iter.Iter<(xref:#type.Key[Key], xref:#type.Value[Value])>
+----
+
+
+
+[[isEmpty]]
+== isEmpty
+
+[source.no-repl,motoko,subs=+macros]
+----
+func isEmpty(trie : xref:#type.Trie[Trie]) : Bool
+----
+
+
+
+[[nodeEqual]]
+== nodeEqual
+
+[source.no-repl,motoko,subs=+macros]
+----
+func nodeEqual(a : xref:#type.Node[Node], b : xref:#type.Node[Node]) : Bool
+----
+
+
+
+[[equal]]
+== equal
+
+[source.no-repl,motoko,subs=+macros]
+----
+func equal(a : xref:#type.Trie[Trie], b : xref:#type.Trie[Trie]) : Bool
+----
+
+
+
+[[nodeToText]]
+== nodeToText
+
+[source.no-repl,motoko,subs=+macros]
+----
+func nodeToText(node : xref:#type.Node[Node]) : Text
+----
+
+
+
+[[pathToText]]
+== pathToText
+
+[source.no-repl,motoko,subs=+macros]
+----
+func pathToText(path : xref:#type.Path[Path]) : Text
+----
+
+
+
+[[valueToText]]
+== valueToText
+
+[source.no-repl,motoko,subs=+macros]
+----
+func valueToText(value : xref:#type.Value[Value]) : Text
+----
+
+
+
+[[type.DB]]
+== DB
+
+[source.no-repl,motoko,subs=+macros]
+----
+type DB = { put : (xref:#type.Hash[Hash], xref:#type.Node[Node]) -> (); get : xref:#type.Hash[Hash] -> ?xref:#type.Node[Node] }
+----
+
+
+
+[[putWithDB]]
+== putWithDB
+
+[source.no-repl,motoko,subs=+macros]
+----
+func putWithDB(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key], value : xref:#type.Value[Value], db : xref:#type.DB[DB]) : xref:#type.Result[Result]<xref:#type.Trie[Trie], Text>
+----
+
+
+

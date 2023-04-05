@@ -1,0 +1,13 @@
+[[module.util/Keccak]]
+= util/Keccak
+
+[[keccak]]
+== keccak
+
+[source.no-repl,motoko,subs=+macros]
+----
+func keccak(data : xref:#type.Buffer[Buffer]) : xref:#type.Hash[Hash]
+----
+
+
+

@@ -1,0 +1,105 @@
+[[module.util/Nibble]]
+= util/Nibble
+
+[[type.Nibble]]
+== Nibble
+
+[source.no-repl,motoko,subs=+macros]
+----
+type Nibble = Nat8
+----
+
+
+
+[[fromArray]]
+== fromArray
+
+[source.no-repl,motoko,subs=+macros]
+----
+func fromArray(arr : pass:[[]Nat8pass:[]]) : pass:[[]xref:#type.Nibble[Nibble]pass:[]]
+----
+
+
+
+[[toArray]]
+== toArray
+
+[source.no-repl,motoko,subs=+macros]
+----
+func toArray(nibbles : pass:[[]xref:#type.Nibble[Nibble]pass:[]]) : pass:[[]Nat8pass:[]]
+----
+
+Convert an array of nibbles into a array of bytes
+
+[[splitByte]]
+== splitByte
+
+[source.no-repl,motoko,subs=+macros]
+----
+func splitByte(b : Nat8) : (xref:#type.Nibble[Nibble], xref:#type.Nibble[Nibble])
+----
+
+Split a byte into its nibbles
+
+[[mergeNibbles]]
+== mergeNibbles
+
+[source.no-repl,motoko,subs=+macros]
+----
+func mergeNibbles(high : xref:#type.Nibble[Nibble], low : xref:#type.Nibble[Nibble]) : Nat8
+----
+
+Merge nibbles into a byte
+Assumes that only lower 4 bits are used, larger values can lead to unintended byte values
+
+[[mergeNibblesSafe]]
+== mergeNibblesSafe
+
+[source.no-repl,motoko,subs=+macros]
+----
+func mergeNibblesSafe(high : xref:#type.Nibble[Nibble], low : xref:#type.Nibble[Nibble]) : Nat8
+----
+
+Merge nibbles into a byte
+Only lower 4 bits are used, higher bits are ignored
+
+[[compare]]
+== compare
+
+[source.no-repl,motoko,subs=+macros]
+----
+func compare(a : pass:[[]xref:#type.Nibble[Nibble]pass:[]], b : pass:[[]xref:#type.Nibble[Nibble]pass:[]]) : Order.Order
+----
+
+Compare two arrays of nibbles
+
+[[matchingNibbleLength]]
+== matchingNibbleLength
+
+[source.no-repl,motoko,subs=+macros]
+----
+func matchingNibbleLength(a : pass:[[]xref:#type.Nibble[Nibble]pass:[]], b : pass:[[]xref:#type.Nibble[Nibble]pass:[]]) : Nat
+----
+
+
+
+[[doKeysMatch]]
+== doKeysMatch
+
+[source.no-repl,motoko,subs=+macros]
+----
+func doKeysMatch(a : pass:[[]xref:#type.Nibble[Nibble]pass:[]], b : pass:[[]xref:#type.Nibble[Nibble]pass:[]]) : Bool
+----
+
+
+
+[[replaceHigh]]
+== replaceHigh
+
+[source.no-repl,motoko,subs=+macros]
+----
+func replaceHigh(byte : Nat8, high : xref:#type.Nibble[Nibble]) : Nat8
+----
+
+
+
