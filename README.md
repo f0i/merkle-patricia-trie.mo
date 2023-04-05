@@ -74,6 +74,15 @@ switch(proofResult) {
 };
 ```
 
+For all available function see the docs:
+
+- [Trie](docs/Trie.adoc)
+- [Proof](docs/Proof.adoc)
+- [Key](docs/Key.adoc)
+- [Value](docs/Value.adoc)
+- [Hash](docs/Hash.adoc)
+
+
 ### Usage with a separate DB
 
 For each function there is an alternative version with the postfix `WithDb`. This allows you to store paris of Hash/Node in a separate key value store (e.g. [MotokoStableBTree](https://github.com/sardariuss/MotokoStableBTree)).
