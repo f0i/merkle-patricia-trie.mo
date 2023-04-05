@@ -6,6 +6,8 @@ import Result "mo:base/Result";
 import Utils "mo:rlp/rlp/utils";
 import Types "mo:rlp/types";
 
+/// This module is copied from https://github.com/relaxed04/rlp-motoko/blob/main/src/rlp/encode.mo
+/// to make the `encodeLength` function accessible to the `RLPHelper`.
 module {
   type Result<T, E> = Result.Result<T, E>;
 

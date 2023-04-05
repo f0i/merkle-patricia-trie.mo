@@ -1,11 +1,12 @@
 import SHA3 "mo:sha3";
 import Blob "mo:base/Blob";
+import Hash "../Hash";
 
 module {
-    type Buffer = [Nat8];
-    type Hash = Blob;
+    type Hash = Hash.Hash;
 
-    public func keccak(data : Buffer) : Hash {
+    /// Calculate keccak hash of a byte array
+    public func keccak(data : [Nat8]) : Hash {
 
         var sha = SHA3.Keccak(256);
         sha.update(data);

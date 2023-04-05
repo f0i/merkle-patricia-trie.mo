@@ -15,6 +15,7 @@ import Int "mo:base/Int";
 import Value "../Value";
 import Hash "../Hash";
 
+/// Helper functions for RLP encoding
 module {
 
     type Buffer = Buffer.Buffer<Nat8>;
@@ -34,10 +35,14 @@ module {
             Debug.trap("encodeHash: already encoded: " # Hash.toHex(hash));
         };
     };
+
+    /// RLP encode a Value
     public func encodeValue(value : Value) : [Nat8] {
         let array = Value.toArray(value);
         return encode(array);
     };
+
+    /// RLP encode an array of bytes
     public func encode(array : [Nat8]) : [Nat8] {
         let buffer = Buffer.fromArray<Nat8>(array);
         let rlpResult = RLP.encode(#Uint8Array buffer);
@@ -45,13 +50,17 @@ module {
         return Buffer.toArray<Nat8>(rlpBuffer);
     };
 
+    /// RLP encode an array of byte arrays individually (does not encode the outer array)
     public func encodeEach(arrays : [[Nat8]]) : [[Nat8]] {
         Array.map<[Nat8], [Nat8]>(arrays, encode);
     };
+
+    /// RLP encode an array of hash values individually (does not encode the outer array)
     public func encodeEachHash(arrays : [Hash]) : [[Nat8]] {
         Array.map<Hash, [Nat8]>(arrays, encodeHash);
     };
 
+    /// RLP encode an array of encoded values (assumes inner values to be encoded already)
     public func encodeOuter(arrays : [[Nat8]]) : [Nat8] {
         if (arrays == []) {
             return [0x80]; // RLP encoded empty array
@@ -65,22 +74,7 @@ module {
         return Buffer.toArray(output);
     };
 
-    public func decodeHash(input : [Nat8]) : Result<[Nat8], Text> {
-        if (input == [0x80]) {
-            return #ok([]); // RLP encoded empty array
-        };
-        let info = getPrefixInfo(input);
-        switch (info) {
-            case (?{ rlpType = #shortString; prefix; data = 32 }) {
-                let hash = Util.dropBytes(input, prefix);
-                return #ok(hash);
-            };
-            case (_) {
-                return #ok(input);
-            };
-        };
-    };
-
+    // Decode a Value
     public func decodeValue(input : [Nat8]) : Result<Value, Text> {
         if (input == [0x80]) {
             return #ok(Value.empty); // RLP encoded empty array
@@ -187,47 +181,7 @@ module {
         };
     };
 
-    func decodeEachByte(input : [[Nat8]]) : [Nat8] {
-        let data = Array.tabulate<Nat8>(
-            input.size(),
-            func(i : Nat) : Nat8 {
-                return decodeByte(input[i]);
-            },
-        );
-        return data;
-    };
-
-    func decodeByte(input : [Nat8]) : Nat8 {
-        let info = getPrefixInfo(input);
-        switch (info) {
-            case (?{ rlpType = #shortString; prefix = 0; data = 1 }) {
-                return input[0];
-            };
-            case (?{ rlpType = #singleByte; prefix; data = 1 }) {
-                return input[prefix];
-            };
-            case (_) {
-                Debug.trap("unexpected data");
-            };
-        };
-    };
-
-    func extractNat8Arrays(data : Buffer.Buffer<RLPType.Decoded>) : {
-        #ok : [[Nat8]];
-        #err : Text;
-    } {
-        let size = data.size();
-        var out = Array.init<[Nat8]>(size, []);
-        for (i in Iter.range(0, size - 1)) {
-            switch (data.get(i)) {
-                case (#Uint8Array(value)) {};
-                case (#Nested(_)) { return #err("unexpected RLP nesting") };
-            };
-        };
-
-        return #ok([]);
-    };
-
+    /// RLP data types
     type RlpDataType = {
         #singleByte;
         #shortString;
@@ -236,7 +190,8 @@ module {
         #longList;
     };
 
-    public func getType(encodedData : [Nat8]) : RlpDataType {
+    /// Get the data type of RLP encoded data
+    func getType(encodedData : [Nat8]) : RlpDataType {
         assert encodedData != [];
 
         let prefix = encodedData[0];
@@ -253,7 +208,8 @@ module {
         };
     };
 
-    public func getPrefixInfo(encodedData : [Nat8]) : ?{
+    /// Get info encoded in the first byte of RLP data
+    func getPrefixInfo(encodedData : [Nat8]) : ?{
         rlpType : RlpDataType;
         prefix : Nat;
         data : Nat;

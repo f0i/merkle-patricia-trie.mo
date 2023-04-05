@@ -12,46 +12,57 @@ import Debug "mo:base/Debug";
 import Util "util";
 import Option "mo:base/Option";
 
+/// Data structure for Key
 module {
     type Result<T, E> = Result.Result<T, E>;
     type Nibble = Nibble.Nibble;
 
+    /// Key data
     public type Key = [Nibble];
 
+    /// Convert text into a Key
     public func fromText(text : Text) : Key {
         let encoded = Text.encodeUtf8(text);
         let bytes = Blob.toArray(encoded);
         Nibble.fromArray(bytes);
     };
 
+    /// Convert an array of bytes into a Key
     public func fromKeyBytes(bytes : [Nat8]) : Key {
         return Nibble.fromArray(bytes);
     };
 
-    /// Get the number of matchin nibbles
+    /// Get the number of matching nibbles
     public func matchingLength(a : Key, b : Key) : Nat {
         return Nibble.matchingNibbleLength(a, b);
     };
 
     // TODO: rename to `drop`
+    /// Remove leading nibbles from a Key
+    /// If there are less than `n` nibbles in the `key`, an empty Key is returned
     public func slice(key : Key, n : Nat) : Key {
         return Util.dropBytes(key, n);
     };
 
+    /// Create a new key from the first `n` nibbles of `key`
+    /// If `n` is larger than the number of nibbles in `key`, `key` is returned
     public func take(key : Key, n : Nat) : Key {
         Util.takeBytes(key, n);
     };
 
+    /// Combine two keys
     public func join(a : Key, b : Key) : Key {
         let sizeA = a.size();
         let sizeB = b.size();
         Array.tabulate(sizeA + sizeB, func(x : Nat) : Nibble = if (x < sizeA) a[x] else b[x - sizeA]);
     };
 
+    /// Create a new key by extending `a` by one nibble `b`
     public func append(a : Key, b : Nibble) : Key {
         Array.tabulate(a.size() + 1, func(x : Nat) : Nibble = if (x < a.size()) a[x] else b);
     };
 
+    /// Generate a human readable Text representation of a Key
     public func toText(key : Key) : Text {
         let values : [Text] = Array.map<Nibble, Text>(key, Nat8.toText);
         let keyText = Text.join(",", values.vals());
@@ -59,25 +70,27 @@ module {
         "key[" # keyText # "]";
     };
 
-    /// get the first nibble of the key and turn it into a Nat for using as index
+    /// Get the first nibble of the key and turn it into a Nat for using as index
     public func toIndex(key : Key) : Nat {
         Nat8.toNat(key[0]);
     };
 
-    public func compactEncode(nibbles : [Nibble], terminating : Bool) : [Nat8] {
-        let even = nibbles.size() % 2 == 0;
-        let size = (nibbles.size() / 2) + 1;
+    /// Encode a Key into a compact encoded array of bytes
+    /// see <https://ethereum.org/en/developers/docs/data-structures-and-encoding/patricia-merkle-trie/#specification>
+    public func compactEncode(key : Key, terminating : Bool) : [Nat8] {
+        let even = key.size() % 2 == 0;
+        let size = (key.size() / 2) + 1;
         var arr = Array.init<Nat8>(size, 0);
 
         if (even) {
             arr[0] := 0x00;
             for (i in Iter.range(0, size - 2)) {
-                arr[i + 1] := (nibbles[i * 2] * 16) + nibbles[i * 2 +1];
+                arr[i + 1] := (key[i * 2] * 16) + key[i * 2 +1];
             };
         } else {
-            arr[0] := 0x10 + nibbles[0];
+            arr[0] := 0x10 + key[0];
             for (i in Iter.range(0, size - 2)) {
-                arr[i + 1] := (nibbles[i * 2 + 1] * 16) + nibbles[i * 2 + 2];
+                arr[i + 1] := (key[i * 2 + 1] * 16) + key[i * 2 + 2];
             };
         };
 
@@ -88,6 +101,8 @@ module {
         return Array.freeze<Nat8>(arr);
     };
 
+    /// Decode a compact encoded array of bytes
+    /// see <https://ethereum.org/en/developers/docs/data-structures-and-encoding/patricia-merkle-trie/#specification>
     public func compactDecode(encoded : Blob) : {
         key : Key;
         terminating : Bool;

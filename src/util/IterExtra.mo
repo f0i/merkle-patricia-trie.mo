@@ -1,9 +1,11 @@
 import Iter "mo:base/Iter";
 import Array "mo:base/Array";
 
+/// Helper functions for Iter
 module {
 
-    /// Access elements of an iterator in pairs
+    /// Access elements of an iterator two at a time
+    /// If `iter` contains an odd number of elements, the last one is discarded
     public func pairs<T>(iter : Iter.Iter<T>) : Iter.Iter<(T, T)> {
 
         func next() : ?(T, T) {
@@ -16,5 +18,4 @@ module {
 
         return { next };
     };
-
 };

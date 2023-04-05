@@ -6,8 +6,11 @@ import IterExtra "IterExtra";
 import Order "mo:base/Order";
 
 module {
+    /// Nibble data type
+    /// must only contain values from 0..15 (lower 4 bits)
     public type Nibble = Nat8;
 
+    /// Convert an array of bytes into an array of Nibble
     public func fromArray(arr : [Nat8]) : [Nibble] {
         let size = arr.size() * 2;
         var nibbles = Array.init<Nat8>(size, 0);
@@ -70,6 +73,7 @@ module {
         return #equal;
     };
 
+    /// Count the number of nibbles matching between `a` and `b`
     public func matchingNibbleLength(a : [Nibble], b : [Nibble]) : Nat {
         let size = Nat.min(a.size(), b.size());
 
@@ -79,16 +83,13 @@ module {
         return size;
     };
 
+    /// Count the number of nibbles matching between `a` and `b`
     public func doKeysMatch(a : [Nibble], b : [Nibble]) : Bool {
-        if (a.size() != b.size()) {
-            return false;
-        } else {
-            return matchingNibbleLength(a, b) == a.size();
-        };
+        return a == b;
     };
 
+    // replace upper 4 bits of `byte` with `high`
     public func replaceHigh(byte : Nat8, high : Nibble) : Nat8 {
         return mergeNibblesSafe(high, byte);
     };
-
 };

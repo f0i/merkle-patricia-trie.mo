@@ -20,6 +20,7 @@ import Value "Value";
 import Hash "Hash";
 import Blob "mo:base/Blob";
 
+/// Data structure and functions to manipulate and query a Merkle Patricia Trie.
 module {
   public type Trie = Node;
   type Value = Value.Value;
@@ -29,6 +30,7 @@ module {
   type TrieMap = TrieMap.TrieMap<Hash, Node>;
   type Result<T, E> = Result.Result<T, E>;
 
+  /// A Node object
   public type Node = {
     #nul;
     #branch : Branch;
@@ -37,13 +39,7 @@ module {
     #hash : Hash;
   };
 
-  public type PartialNode = {
-    #nul;
-    #branch : Branch;
-    #leaf : Leaf;
-    #extension : Extension;
-  };
-
+  /// A Branch node
   public type Branch = {
     // 16 nodes
     nodes : [Node];
@@ -51,23 +47,26 @@ module {
     var hash : ?Hash;
   };
 
+  /// A Leaf node
   public type Leaf = {
     key : Key;
     value : Value;
     var hash : ?Hash;
   };
 
-  type Extension = {
+  /// An Extension node
+  public type Extension = {
     key : Key;
     node : Node; // TODO: rename to branch
     var hash : ?Hash;
   };
 
-  public type Hash = Hash.Hash;
+  /// A Hash value
+  type Hash = Hash.Hash;
 
   /// Key describing a path in the trie
   /// In the case of ethereum this is keccak256(rlp(value))
-  public type Key = Key.Key;
+  type Key = Key.Key;
 
   /// Key with prefix nibble indicating type and path length:
   /// prefix 0x00 extension, even
@@ -168,6 +167,8 @@ module {
   };
 
   /// Delete a key from a trie
+  /// Similar to  the `delete` function, but uses a DB to store hash/Node pairs
+  /// This should not be mixed with `put` or `delete` function or it can cause invalid tries or traps!
   public func deleteWithDB(trie : Trie, key : Key, db : DB) : Result<Trie, Text> {
     return putWithDB(trie, key, Value.empty, db);
   };
@@ -458,6 +459,7 @@ module {
     };
   };
 
+  /// RLP encode a Node
   public func nodeSerialize(node : Node) : [Nat8] {
     let raw = nodeRaw(node);
     if (raw.size() == 1) {
@@ -476,6 +478,7 @@ module {
     };
   };
 
+  /// Get a root hash of a Trie
   public func rootHash(trie : Trie) : Hash {
     var bytes : Hash = nodeHash(trie);
     if (bytes.size() < 32) {
@@ -484,10 +487,12 @@ module {
     return bytes;
   };
 
+  /// Get root hash as a hex Text
   public func hashHex(trie : Trie) : Text {
     return Hash.toHex(rootHash(trie));
   };
 
+  /// Internal information from querying a trie
   public type Path = {
     // The node for the given key or #nul if no node is set
     node : Node;
@@ -560,6 +565,8 @@ module {
     };
   };
 
+  /// Find the a path in a node and return the path to get there.
+  /// Similar to `findPath`, but also looks up nodes in a DB
   public func findPathWithDB(node : Node, key : Key, stack : List<(Key, Node)>, db : DB) : Path {
     var path = findPath(node, key, stack);
 
@@ -578,6 +585,9 @@ module {
     };
   };
 
+  /// Get an Iter to get all Key/Value pairs
+  /// This should only be called on a tree build with `put` (not `putWithDB`),
+  /// otherwise it can cause a trap!
   public func toIter(trie : Trie) : Iter.Iter<(Key, Value)> {
     type StackElement = { key : Key; node : Node };
 
@@ -638,6 +648,7 @@ module {
     };
   };
 
+  /// Check if a Trie is empty
   public func isEmpty(trie : Trie) : Bool {
     switch (trie) {
       case (#nul) { true };
@@ -645,6 +656,7 @@ module {
     };
   };
 
+  /// Check if Node `a` is equal to Node `b`
   public func nodeEqual(a : Node, b : Node) : Bool {
     switch (a, b) {
       case (#nul, #nul) { true };
@@ -664,8 +676,10 @@ module {
     };
   };
 
+  /// Check if Trie `a` is equal to Trie `b`
   public func equal(a : Trie, b : Trie) : Bool = nodeEqual(a, b);
 
+  /// Get a node as a human readable Text
   public func nodeToText(node : Node) : Text {
     switch (node) {
       case (#nul) { "<>" };
@@ -690,6 +704,7 @@ module {
     };
   };
 
+  /// Get path info as a human readable Text
   public func pathToText(path : Path) : Text {
     let nodeIter = List.toIter<(Key, Node)>(path.stack);
     func toText((k : Key, n : Node)) : Text = Key.toText(k) # ": " # nodeToText(n);
@@ -702,15 +717,20 @@ module {
     ")";
   };
 
+  /// Get placeholder text for any value
   public func valueToText(value : Value) : Text {
     "{}";
   };
 
+  /// Interface for a database
   public type DB = {
     put : (Hash, Node) -> ();
     get : Hash -> ?Node;
   };
 
+  /// Add a value into a trie
+  /// Similar to  the `put` function, but uses a DB to store hash/Node pairs
+  /// This should not be mixed with `put` or `delete` function or it can cause invalid tries or traps!
   public func putWithDB(trie : Trie, key : Key, value : Value, db : DB) : Result<Trie, Text> {
     let path = findPathWithDB(trie, key, null, db);
 

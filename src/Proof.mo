@@ -1,19 +1,21 @@
-import Trie "Trie";
-import Key "Key";
-import Value "Value";
-import List "mo:base/List";
 import Array "mo:base/Array";
-import Hex "util/Hex";
+import List "mo:base/List";
 import TrieMap "mo:base/TrieMap";
-import Hash "Hash";
 
+import Hash "Hash";
+import Hex "util/Hex";
+import Key "Key";
+import Trie "Trie";
+import Value "Value";
+
+/// Functions to create and verify a Proof
 module {
-    type Trie = Trie.Trie;
-    type Path = Trie.Path;
-    type Node = Trie.Node;
-    type Value = Value.Value;
-    type Hash = Trie.Hash;
+    type Hash = Hash.Hash;
     type Key = Key.Key;
+    type Node = Trie.Node;
+    type Path = Trie.Path;
+    type Trie = Trie.Trie;
+    type Value = Value.Value;
 
     /// Proof data
     public type Proof = [[Nat8]];
@@ -90,6 +92,7 @@ module {
         };
     };
 
+    /// Turn the ProofResult `val` into human readable Text
     public func proofResultToText(val : ProofResult) : Text {
         switch (val) {
             case (#included(value)) { "#included(" # Value.toHex(value) # ")" };

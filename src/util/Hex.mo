@@ -8,8 +8,10 @@ import Trie "mo:base/Trie";
 import Debug "mo:base/Debug";
 import Text "mo:base/Text";
 
+/// Function to convert between hex and byte arrays
 module {
 
+    /// Convert a byte array to hex Text
     public func toText(bytes : [Nat8]) : Text {
         var out = "";
         for (byte in bytes.vals()) {
@@ -19,11 +21,13 @@ module {
         return out;
     };
 
+    /// Convert an array of byte arrays to hex Text
     public func toText2D(bytess : [[Nat8]]) : Text {
         let texts = Array.map(bytess, toText);
         return "[" # Text.join(", ", texts.vals()) # "]";
     };
 
+    /// Convert hex Text into a byte array
     public func toArray(hex : Text) : Result.Result<[Nat8], Text> {
         let chars = hex.size();
 
@@ -43,6 +47,8 @@ module {
         return #ok(Array.freeze(arr));
     };
 
+    /// Convert hex Text into a byte array
+    /// Similar to `toArray` but traps if `hex` contains invalid characters
     public func toArrayUnsafe(hex : Text) : [Nat8] {
         switch (toArray(hex)) {
             case (#ok(data)) return data;
@@ -50,6 +56,7 @@ module {
         };
     };
 
+    /// Decode a single hex character
     func decodeNibble(c : Char) : ?Nat8 {
         switch (c) {
             case ('0') { ?0 };
@@ -78,10 +85,12 @@ module {
         };
     };
 
+    /// Encode a byte into hex Text containing exactly two hex characters
     func encodeByte(byte : Nat8) : Text {
         return encodeNibble(byte / 16) # encodeNibble(byte % 16);
     };
 
+    /// Encode a nibble into a single hex character
     func encodeNibble(nibble : Nat8) : Text {
         switch (nibble) {
             case (0) { "0" };
