@@ -6,7 +6,7 @@
     "scripts": {
         "test": "./test.sh",
         "flamegraph": "./test-profiler.sh",
-        "docs": "$(vessel bin)/mo-doc"
+        "docs": "$(vessel bin)/mo-doc  --format adoc"
     },
     "author": "f0i",
     "license": "ISC"
