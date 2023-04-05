@@ -69,7 +69,7 @@ module {
 
             test "should delete a value";
             trie := unwrap(Trie.deleteWithDB(trie, Key.fromText("test"), db));
-            assert unwrap(Trie.getWithDB(trie, Key.fromText("test"), db)) == ?"" /* TODO: replace ?[] with null */;
+            assert unwrap(Trie.getWithDB(trie, Key.fromText("test"), db)) == null;
 
             test "should recreate a value";
             trie := unwrap(Trie.putWithDB(trie, Key.fromText("test"), Value.fromText("one"), db));
@@ -88,7 +88,7 @@ module {
 
             test "should delete from a branch";
             trie := unwrap(Trie.deleteWithDB(trie, Key.fromText("doge"), db));
-            assert unwrap(Trie.getWithDB(trie, Key.fromText("doge"), db)) == ?""; // TODO: should be null
+            assert unwrap(Trie.getWithDB(trie, Key.fromText("doge"), db)) == null;
 
             section "storing longer values";
             do {

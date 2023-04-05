@@ -174,16 +174,21 @@ module {
   };
 
   /// Add a value into a trie
+  /// If value is empty, the key will be deleted
   public func put(trie : Trie, key : Key, value : Value) : Trie {
 
     // Find closest node
     let path = findPath(trie, key, null);
     let { node; remaining; stack; mismatch } = path;
+    let delete = value == Value.empty;
 
     let (stuckOn, update) = switch (node, mismatch) {
       case (#leaf _, _) { (node, true) }; // update existing leaf
       case (#branch _, _) { (node, true) }; // update existing branch value
-      case (_, mismatch) { (mismatch, false) };
+      case (_, mismatch) {
+        if (delete) { return trie }; // Key is not in trie, nothing to delete
+        (mismatch, false);
+      };
     };
 
     // insert leaf
@@ -195,7 +200,11 @@ module {
       case (#branch branch) {
         // replace existing
         if (remaining != []) Debug.trap("Can't get stuck on a branch with non empty key: " # Key.toText(remaining));
-        updateBranchValue(branch, ?value);
+        if (delete) {
+          updateBranchValue(branch, null);
+        } else {
+          updateBranchValue(branch, ?value);
+        };
       };
       case (#leaf leaf) {
         let matching = Key.matchingLength(leaf.key, remaining);
@@ -203,7 +212,11 @@ module {
         // replace leaf with one of the following
         if (update) {
           // replace existing
-          createLeaf(leaf.key, value);
+          if (delete) {
+            #nul;
+          } else {
+            createLeaf(leaf.key, value);
+          };
         } else if (leaf.key == []) {
           // branch(leaf.value)->new
           let newLeaf = createLeaf(Key.drop(remaining, 1), value);
@@ -286,7 +299,7 @@ module {
       };
     };
 
-    Debug.trap("unreachable (end of findPath)");
+    Debug.trap("unreachable (end of Trie.put)");
   };
 
   /// Create a new branch with two nodes
@@ -735,6 +748,7 @@ module {
     let path = findPathWithDB(trie, key, null, db);
 
     let { node; remaining; stack; mismatch } = path;
+    let delete = value == Value.empty;
 
     let (stuckOn, update) = switch (node, mismatch) {
       case (#leaf _, _) { (node, true) }; // update existing leaf
@@ -751,7 +765,11 @@ module {
       case (#branch branch) {
         // replace existing
         if (remaining != []) Debug.trap("Can't get stuck on a branch with non empty key: " # Key.toText(remaining));
-        updateBranchValue(branch, ?value);
+        if (delete) {
+          updateBranchValue(branch, null);
+        } else {
+          updateBranchValue(branch, ?value);
+        };
       };
       case (#leaf leaf) {
         let matching = Key.matchingLength(leaf.key, remaining);
@@ -759,7 +777,11 @@ module {
         // replace leaf with one of the following
         if (update) {
           // replace existing
-          createLeaf(leaf.key, value);
+          if (delete) {
+            #nul;
+          } else {
+            createLeaf(leaf.key, value);
+          };
         } else if (leaf.key == []) {
           // branch(leaf.value)->new
           let newLeaf = createLeaf(Key.drop(remaining, 1), value);
@@ -851,8 +873,6 @@ module {
       };
     };
 
-    Debug.trap("unreachable (end of findPath)");
-
-    #err("TODO: implement");
+    Debug.trap("unreachable (end of Trie.putWithDB)");
   };
 };

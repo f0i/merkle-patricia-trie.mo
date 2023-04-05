@@ -71,14 +71,14 @@ module {
                 let key1 = Key.fromKeyBytes([0x12, 0x31]);
                 let key2 = Key.fromKeyBytes([0x22, 0x32]);
                 let key3 = Key.fromKeyBytes([0x32, 0x33]);
-                trie := Trie.put(trie, key1, "");
-                trie := Trie.put(trie, key2, "");
-                trie := Trie.put(trie, key3, "");
+                trie := Trie.put(trie, key1, "a");
+                trie := Trie.put(trie, key2, "b");
+                trie := Trie.put(trie, key3, "c");
 
                 let path = Trie.findPath(trie, key2, null);
                 let expected : Trie.Node = #leaf {
                     key = Key.drop(key2, 1);
-                    value = "";
+                    value = "b";
                     var hash = null;
                 };
                 assert Trie.nodeEqual(path.node, expected);
@@ -325,7 +325,7 @@ module {
 
             test "should delete a value";
             trie := Trie.delete(trie, Key.fromText("test"));
-            assert Trie.get(trie, Key.fromText("test")) == ?"" /* TODO: replace ?[] with null */;
+            assert Trie.get(trie, Key.fromText("test")) == null;
 
             test "should recreate a value";
             trie := Trie.put(trie, Key.fromText("test"), Value.fromText("one"));
@@ -344,7 +344,7 @@ module {
 
             test "should delete from a branch";
             trie := Trie.delete(trie, Key.fromText("doge"));
-            assert Trie.get(trie, Key.fromText("doge")) == ?""; // TODO: should be null
+            assert Trie.get(trie, Key.fromText("doge")) == null;
 
             section "storing longer values";
             do {
