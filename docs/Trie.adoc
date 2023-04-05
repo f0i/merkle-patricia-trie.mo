@@ -102,6 +102,7 @@ func put(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key], value : xref:#
 ----
 
 Add a value into a trie
+If value is empty, the key will be deleted
 
 [[createLeaf]]
 == createLeaf

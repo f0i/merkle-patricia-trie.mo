@@ -41,12 +41,12 @@ func matchingLength(a : xref:#type.Key[Key], b : xref:#type.Key[Key]) : Nat
 
 Get the number of matching nibbles
 
-[[slice]]
-== slice
+[[drop]]
+== drop
 
 [source.no-repl,motoko,subs=+macros]
 ----
-func slice(key : xref:#type.Key[Key], n : Nat) : xref:#type.Key[Key]
+func drop(key : xref:#type.Key[Key], n : Nat) : xref:#type.Key[Key]
 ----
 
 Remove leading nibbles from a Key
