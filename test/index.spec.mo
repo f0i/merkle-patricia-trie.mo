@@ -3,7 +3,9 @@ import TrieSpecWithDB "trie/withDB.spec";
 import NibbleSpec "util/nibble.spec";
 import KeySpec "trie/key.spec";
 import ProofSpec "trie/proof.spec";
-import { done } "Test";
+import { start; done } "Test";
+
+start();
 
 KeySpec.tests();
 NibbleSpec.tests();
