@@ -9,6 +9,7 @@
 
 # dfx temporary files
 .dfx/
+tmp/
 
 # generated files
 src/declarations/

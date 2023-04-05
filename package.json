@@ -4,7 +4,9 @@
     "description": "Merkle Patricia Trie",
     "main": "",
     "scripts": {
-        "test": "for i in test/*.spec.mo ; do $(vessel bin)/moc $(vessel sources) -r $i ; done"
+        "test": "./test.sh",
+        "flamegraph": "./test-profiler.sh",
+        "docs": "$(vessel bin)/mo-doc"
     },
     "author": "f0i",
     "license": "ISC"

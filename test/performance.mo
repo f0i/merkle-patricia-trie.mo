@@ -7,11 +7,8 @@ import { done } "Test";
 KeySpec.tests();
 NibbleSpec.tests();
 
-TrieSpec.hashTests();
-TrieSpec.basicTests();
 TrieSpec.ethereumJsTests();
 
 ProofSpec.tests();
-ProofSpec.ethereumjsTests();
 
 done();
