@@ -72,7 +72,7 @@ module {
             first := false;
         };
 
-        let path = Trie.findPathWithDb(#hash(root), key, null, db);
+        let path = Trie.findPathWithDB(#hash(root), key, null, db);
 
         if (path.remaining.size() > 0) {
             switch (path.node) {

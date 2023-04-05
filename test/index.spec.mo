@@ -1,5 +1,5 @@
 import TrieSpec "trie/trie.spec";
-import TrieSpecWithDB "trie/withDb.spec";
+import TrieSpecWithDB "trie/withDB.spec";
 import NibbleSpec "util/nibble.spec";
 import KeySpec "trie/key.spec";
 import ProofSpec "trie/proof.spec";
@@ -15,6 +15,7 @@ TrieSpec.ethereumJsTests();
 ProofSpec.tests();
 ProofSpec.ethereumjsTests();
 
-TrieSpecWithDB.testWithDB();
+TrieSpecWithDB.tests();
+TrieSpecWithDB.ethereumJsTests();
 
 done();

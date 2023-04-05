@@ -167,6 +167,11 @@ module {
     return put(trie, key, Value.empty);
   };
 
+  /// Delete a key from a trie
+  public func deleteWithDB(trie : Trie, key : Key, db : DB) : Result<Trie, Text> {
+    return putWithDB(trie, key, Value.empty, db);
+  };
+
   /// Add a value into a trie
   public func put(trie : Trie, key : Key, value : Value) : Trie {
 
@@ -358,11 +363,11 @@ module {
   };
 
   /// Get the value for a specific key
-  public func getWithDb(trie : Trie, key : Key, db : DB) : Result<?Value, Text> {
-    let path = findPathWithDb(trie, key, null, db);
+  public func getWithDB(trie : Trie, key : Key, db : DB) : Result<?Value, Text> {
+    let path = findPathWithDB(trie, key, null, db);
     switch (path.node) {
       case (#hash hash) {
-        return #err("Trie.getWithDb: Missing hash " # Hash.toHex(hash));
+        return #err("Trie.getWithDB: Missing hash " # Hash.toHex(hash));
       };
       case (_) {
         if (path.remaining.size() > 0) return #ok(null);
@@ -555,13 +560,13 @@ module {
     };
   };
 
-  public func findPathWithDb(node : Node, key : Key, stack : List<(Key, Node)>, db : DB) : Path {
+  public func findPathWithDB(node : Node, key : Key, stack : List<(Key, Node)>, db : DB) : Path {
     var path = findPath(node, key, stack);
 
     switch (path) {
       case ({ node = #hash(hash); remaining; stack }) {
         switch (db.get(hash)) {
-          case (?node) { return findPathWithDb(node, remaining, stack, db) };
+          case (?node) { return findPathWithDB(node, remaining, stack, db) };
           case (null) {
             return path;
           };
@@ -707,7 +712,7 @@ module {
   };
 
   public func putWithDB(trie : Trie, key : Key, value : Value, db : DB) : Result<Trie, Text> {
-    let path = findPathWithDb(trie, key, null, db);
+    let path = findPathWithDB(trie, key, null, db);
 
     let { node; remaining; stack; mismatch } = path;
 
