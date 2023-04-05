@@ -206,32 +206,32 @@ module {
           createLeaf(leaf.key, value);
         } else if (leaf.key == []) {
           // branch(leaf.value)->new
-          let newLeaf = createLeaf(Key.slice(remaining, 1), value);
+          let newLeaf = createLeaf(Key.drop(remaining, 1), value);
           createBranchWithValue(remaining, newLeaf, leaf.value);
         } else if (remaining == []) {
           // branch(new.value)->leaf
-          let oldLeaf = createLeaf(Key.slice(leaf.key, 1), leaf.value);
+          let oldLeaf = createLeaf(Key.drop(leaf.key, 1), leaf.value);
           createBranchWithValue(leaf.key, oldLeaf, value);
         } else if (matching == 0) {
           // branch->leaf/new
-          let newLeaf = createLeaf(Key.slice(remaining, 1), value);
-          let oldLeaf = createLeaf(Key.slice(leaf.key, 1), leaf.value);
+          let newLeaf = createLeaf(Key.drop(remaining, 1), value);
+          let oldLeaf = createLeaf(Key.drop(leaf.key, 1), leaf.value);
           createBranch(leaf.key, oldLeaf, remaining, newLeaf);
         } else if (matching == leaf.key.size()) {
           // extension->branch(leaf.value)->new
-          let newLeaf = createLeaf(Key.slice(remaining, matching + 1), value);
-          let newBranch = createBranchWithValue(Key.slice(remaining, matching), newLeaf, leaf.value);
+          let newLeaf = createLeaf(Key.drop(remaining, matching + 1), value);
+          let newBranch = createBranchWithValue(Key.drop(remaining, matching), newLeaf, leaf.value);
           createExtension(leaf.key, newBranch);
         } else if (matching == remaining.size()) {
           // extension->branch(new.value)->leaf
-          let oldLeaf = createLeaf(Key.slice(leaf.key, matching + 1), leaf.value);
-          let newBranch = createBranchWithValue(Key.slice(leaf.key, matching), oldLeaf, value);
+          let oldLeaf = createLeaf(Key.drop(leaf.key, matching + 1), leaf.value);
+          let newBranch = createBranchWithValue(Key.drop(leaf.key, matching), oldLeaf, value);
           createExtension(remaining, newBranch);
         } else {
           // extension->branch->leaf/new
-          let newLeaf = createLeaf(Key.slice(remaining, matching + 1), value);
-          let oldLeaf = createLeaf(Key.slice(leaf.key, matching + 1), leaf.value);
-          let newBranch = createBranch(Key.slice(leaf.key, matching), oldLeaf, Key.slice(remaining, matching), newLeaf);
+          let newLeaf = createLeaf(Key.drop(remaining, matching + 1), value);
+          let oldLeaf = createLeaf(Key.drop(leaf.key, matching + 1), leaf.value);
+          let newBranch = createBranch(Key.drop(leaf.key, matching), oldLeaf, Key.drop(remaining, matching), newLeaf);
           createExtension(Key.take(remaining, matching), newBranch);
         };
       };
@@ -240,25 +240,25 @@ module {
 
         if (remaining == []) {
           // branch(value)->ext
-          let oldExt = createExtension(Key.slice(ext.key, 1), ext.node);
+          let oldExt = createExtension(Key.drop(ext.key, 1), ext.node);
           createBranchWithValue(ext.key, oldExt, value);
         } else if (matching == 0) {
           // branch->ext/new
-          let oldExt = createExtension(Key.slice(ext.key, 1), ext.node);
-          let newLeaf = createLeaf(Key.slice(remaining, 1), value);
+          let oldExt = createExtension(Key.drop(ext.key, 1), ext.node);
+          let newLeaf = createLeaf(Key.drop(remaining, 1), value);
           createBranch(ext.key, oldExt, remaining, newLeaf);
         } else if (matching == ext.key.size()) {
           Debug.trap("Can't reach: if ext.key matches, it would have been followed");
         } else if (matching == remaining.size()) {
           // extension->branch(new.value)->ext
-          let oldExt = createExtension(Key.slice(ext.key, matching + 1), ext.node);
-          let newBranch = createBranchWithValue(Key.slice(ext.key, matching), oldExt, value);
+          let oldExt = createExtension(Key.drop(ext.key, matching + 1), ext.node);
+          let newBranch = createBranchWithValue(Key.drop(ext.key, matching), oldExt, value);
           createExtension(remaining, newBranch);
         } else {
           // extension->branch->ext/new
-          let oldExt = createExtension(Key.slice(ext.key, matching + 1), ext.node);
-          let newLeaf = createLeaf(Key.slice(remaining, matching + 1), value);
-          let newBranch = createBranch(Key.slice(ext.key, matching), oldExt, Key.slice(remaining, matching), newLeaf);
+          let oldExt = createExtension(Key.drop(ext.key, matching + 1), ext.node);
+          let newLeaf = createLeaf(Key.drop(remaining, matching + 1), value);
+          let newBranch = createBranch(Key.drop(ext.key, matching), oldExt, Key.drop(remaining, matching), newLeaf);
           createExtension(Key.take(remaining, matching), newBranch);
         };
       };
@@ -538,7 +538,7 @@ module {
           return { node; stack; remaining = []; mismatch = #nul };
         };
         let index = Key.toIndex(key);
-        let path = findPath(branch.nodes[index], Key.slice(key, 1), ?((key, node), stack));
+        let path = findPath(branch.nodes[index], Key.drop(key, 1), ?((key, node), stack));
         return path;
       };
       case (#extension ext) {
@@ -560,7 +560,7 @@ module {
           };
         };
         // extention is part of key
-        return findPath(ext.node, Key.slice(key, same), ?((key, node), stack));
+        return findPath(ext.node, Key.drop(key, same), ?((key, node), stack));
       };
     };
   };
@@ -762,32 +762,32 @@ module {
           createLeaf(leaf.key, value);
         } else if (leaf.key == []) {
           // branch(leaf.value)->new
-          let newLeaf = createLeaf(Key.slice(remaining, 1), value);
+          let newLeaf = createLeaf(Key.drop(remaining, 1), value);
           createBranchWithValue(remaining, newLeaf, leaf.value);
         } else if (remaining == []) {
           // branch(new.value)->leaf
-          let oldLeaf = createLeaf(Key.slice(leaf.key, 1), leaf.value);
+          let oldLeaf = createLeaf(Key.drop(leaf.key, 1), leaf.value);
           createBranchWithValue(leaf.key, oldLeaf, value);
         } else if (matching == 0) {
           // branch->leaf/new
-          let newLeaf = createLeaf(Key.slice(remaining, 1), value);
-          let oldLeaf = createLeaf(Key.slice(leaf.key, 1), leaf.value);
+          let newLeaf = createLeaf(Key.drop(remaining, 1), value);
+          let oldLeaf = createLeaf(Key.drop(leaf.key, 1), leaf.value);
           createBranch(leaf.key, oldLeaf, remaining, newLeaf);
         } else if (matching == leaf.key.size()) {
           // extension->branch(leaf.value)->new
-          let newLeaf = createLeaf(Key.slice(remaining, matching + 1), value);
-          let newBranch = createBranchWithValue(Key.slice(remaining, matching), newLeaf, leaf.value);
+          let newLeaf = createLeaf(Key.drop(remaining, matching + 1), value);
+          let newBranch = createBranchWithValue(Key.drop(remaining, matching), newLeaf, leaf.value);
           createExtension(leaf.key, newBranch);
         } else if (matching == remaining.size()) {
           // extension->branch(new.value)->leaf
-          let oldLeaf = createLeaf(Key.slice(leaf.key, matching + 1), leaf.value);
-          let newBranch = createBranchWithValue(Key.slice(leaf.key, matching), oldLeaf, value);
+          let oldLeaf = createLeaf(Key.drop(leaf.key, matching + 1), leaf.value);
+          let newBranch = createBranchWithValue(Key.drop(leaf.key, matching), oldLeaf, value);
           createExtension(remaining, newBranch);
         } else {
           // extension->branch->leaf/new
-          let newLeaf = createLeaf(Key.slice(remaining, matching + 1), value);
-          let oldLeaf = createLeaf(Key.slice(leaf.key, matching + 1), leaf.value);
-          let newBranch = createBranch(Key.slice(leaf.key, matching), oldLeaf, Key.slice(remaining, matching), newLeaf);
+          let newLeaf = createLeaf(Key.drop(remaining, matching + 1), value);
+          let oldLeaf = createLeaf(Key.drop(leaf.key, matching + 1), leaf.value);
+          let newBranch = createBranch(Key.drop(leaf.key, matching), oldLeaf, Key.drop(remaining, matching), newLeaf);
           createExtension(Key.take(remaining, matching), newBranch);
         };
       };
@@ -796,25 +796,25 @@ module {
 
         if (remaining == []) {
           // branch(value)->ext
-          let oldExt = createExtension(Key.slice(ext.key, 1), ext.node);
+          let oldExt = createExtension(Key.drop(ext.key, 1), ext.node);
           createBranchWithValue(ext.key, oldExt, value);
         } else if (matching == 0) {
           // branch->ext/new
-          let oldExt = createExtension(Key.slice(ext.key, 1), ext.node);
-          let newLeaf = createLeaf(Key.slice(remaining, 1), value);
+          let oldExt = createExtension(Key.drop(ext.key, 1), ext.node);
+          let newLeaf = createLeaf(Key.drop(remaining, 1), value);
           createBranch(ext.key, oldExt, remaining, newLeaf);
         } else if (matching == ext.key.size()) {
           Debug.trap("Can't reach: if ext.key matches, it would have been followed");
         } else if (matching == remaining.size()) {
           // extension->branch(new.value)->ext
-          let oldExt = createExtension(Key.slice(ext.key, matching + 1), ext.node);
-          let newBranch = createBranchWithValue(Key.slice(ext.key, matching), oldExt, value);
+          let oldExt = createExtension(Key.drop(ext.key, matching + 1), ext.node);
+          let newBranch = createBranchWithValue(Key.drop(ext.key, matching), oldExt, value);
           createExtension(remaining, newBranch);
         } else {
           // extension->branch->ext/new
-          let oldExt = createExtension(Key.slice(ext.key, matching + 1), ext.node);
-          let newLeaf = createLeaf(Key.slice(remaining, matching + 1), value);
-          let newBranch = createBranch(Key.slice(ext.key, matching), oldExt, Key.slice(remaining, matching), newLeaf);
+          let oldExt = createExtension(Key.drop(ext.key, matching + 1), ext.node);
+          let newLeaf = createLeaf(Key.drop(remaining, matching + 1), value);
+          let newBranch = createBranch(Key.drop(ext.key, matching), oldExt, Key.drop(remaining, matching), newLeaf);
           createExtension(Key.take(remaining, matching), newBranch);
         };
       };

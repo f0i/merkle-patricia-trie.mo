@@ -13,12 +13,12 @@ module {
         section "Key";
         do {
 
-            test "slice";
+            test "drop";
             do {
 
                 let arr : [Nat8] = [0x10, 0x20, 0x30, 0x40];
                 let key = Key.fromKeyBytes(arr);
-                assert Key.slice(key, 6) == [4, 0];
+                assert Key.drop(key, 6) == [4, 0];
             };
 
             test "take";

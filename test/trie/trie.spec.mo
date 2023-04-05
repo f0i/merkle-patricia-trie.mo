@@ -58,7 +58,7 @@ module {
 
                 let path = Trie.findPath(trie, key2, null);
                 let expected : Trie.Node = #leaf {
-                    key = Key.slice(key2, 1);
+                    key = Key.drop(key2, 1);
                     value = Value.fromText("val");
                     var hash = null;
                 };
@@ -77,7 +77,7 @@ module {
 
                 let path = Trie.findPath(trie, key2, null);
                 let expected : Trie.Node = #leaf {
-                    key = Key.slice(key2, 1);
+                    key = Key.drop(key2, 1);
                     value = "";
                     var hash = null;
                 };

@@ -37,10 +37,9 @@ module {
         return Nibble.matchingNibbleLength(a, b);
     };
 
-    // TODO: rename to `drop`
     /// Remove leading nibbles from a Key
     /// If there are less than `n` nibbles in the `key`, an empty Key is returned
-    public func slice(key : Key, n : Nat) : Key {
+    public func drop(key : Key, n : Nat) : Key {
         return Util.dropBytes(key, n);
     };
 
