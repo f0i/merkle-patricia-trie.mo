@@ -4,6 +4,7 @@ import NibbleSpec "util/nibble.spec";
 import KeySpec "trie/key.spec";
 import ProofSpec "trie/proof.spec";
 import { start; done } "Test";
+import Official "trie/official";
 
 start();
 
@@ -19,5 +20,7 @@ ProofSpec.ethereumjsTests();
 
 TrieSpecWithDB.tests();
 TrieSpecWithDB.ethereumJsTests();
+
+Official.tests();
 
 done();

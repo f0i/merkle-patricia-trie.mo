@@ -333,11 +333,63 @@ module {
   func updateBranch(branch : Branch, key : Key, node : Node) : Node {
     var nodes = Array.thaw<Node>(branch.nodes);
     nodes[Key.toIndex(key)] := node;
-    return #branch({
+    let newBranch : Branch = {
       nodes = Array.freeze(nodes);
       value = branch.value;
       var hash = null;
-    });
+    };
+    if (isEmpty(node)) {
+      return simplifyBranch(newBranch);
+    };
+
+    return #branch(newBranch);
+  };
+
+  func simplifyBranch(branch : Branch) : Node {
+    var values = 0;
+    var index = 0;
+    if (branch.value != null) {
+      values += 1;
+    };
+    for (i in Iter.range(0, 15)) {
+      if (not isEmpty(branch.nodes[i])) {
+        values += 1;
+        index := i;
+      };
+
+      // Check if at least two values are set
+      if (values > 1) return #branch(branch);
+    };
+
+    // no value set
+    if (values == 0) return #nul;
+
+    // only one value set
+    switch (branch.value) {
+      case (?value) {
+        return createLeaf(Key.fromKeyBytes([]), value);
+      };
+      case (null) {
+        return addKeyPrefix(branch.nodes[index], Nibble.fromNat(index));
+      };
+    };
+  };
+
+  func addKeyPrefix(node : Node, index : Nibble) : Node {
+    switch (node) {
+      case (#nul) { #nul };
+      case (#branch(branch)) { createExtension([index], node) };
+      case (#leaf(leaf)) {
+        createLeaf(Key.addPrefix(index, leaf.key), leaf.value);
+      };
+      case (#extension(ext)) {
+        createExtension(Key.addPrefix(index, ext.key), ext.node);
+      };
+      case (#hash hash) {
+        // TODO?: handle this case
+        createBranch([index], node, [index], node);
+      };
+    };
   };
 
   /// Change the value for a branch
@@ -351,10 +403,32 @@ module {
 
   /// Change the node an extension is pointing to
   func updateExtension(ext : Extension, newNode : Node) : Node {
-    return #extension {
-      key = ext.key;
-      node = newNode;
-      var hash = null;
+    switch (newNode) {
+      case (#nul) { #nul };
+      case (#branch(branch)) {
+        #extension {
+          key = ext.key;
+          node = newNode;
+          var hash = null;
+        };
+
+      };
+      case (#leaf(leaf)) {
+        let key = Key.join(ext.key, leaf.key);
+        createLeaf(key, leaf.value);
+      };
+      case (#extension(other)) {
+        let key = Key.join(ext.key, other.key);
+        createExtension(key, other.node);
+      };
+      case (#hash hash) {
+        // TODO? handle this case
+        #extension {
+          key = ext.key;
+          node = newNode;
+          var hash = null;
+        };
+      };
     };
   };
 

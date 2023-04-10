@@ -92,4 +92,9 @@ module {
     public func replaceHigh(byte : Nat8, high : Nibble) : Nat8 {
         return mergeNibblesSafe(high, byte);
     };
+
+    public func fromNat(nat : Nat) : Nibble {
+        assert nat < 16;
+        Nat8.fromNat(nat);
+    };
 };

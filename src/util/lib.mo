@@ -17,6 +17,17 @@ module {
         };
     };
 
+    /// Get the success value from an Option
+    /// Traps if result is null
+    public func unwrapOpt<T>(input : ?T) : T {
+        switch (input) {
+            case (?value) { value };
+            case (null) {
+                Debug.trap("unwrapOpt expects input not to be null");
+            };
+        };
+    };
+
     /// Drop `n` elements from an array of bytes
     /// Returns an empty array if n is greater than the size of `data`
     public func dropBytes(data : [Nat8], n : Nat) : [Nat8] {

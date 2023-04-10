@@ -11,6 +11,7 @@ import Blob "mo:base/Blob";
 import Debug "mo:base/Debug";
 import Util "util";
 import Option "mo:base/Option";
+import Hex "util/Hex";
 
 /// Data structure for Key
 module {
@@ -25,6 +26,24 @@ module {
         let encoded = Text.encodeUtf8(text);
         let bytes = Blob.toArray(encoded);
         Nibble.fromArray(bytes);
+    };
+
+    /// Convert hex Text into a Key
+    public func fromHex(hex : Text) : ?Key {
+        let data = Hex.toArray(hex);
+        switch (data) {
+            case (#ok bytes) { ?Nibble.fromArray(bytes) };
+            case (#err _) { return null };
+        };
+    };
+
+    /// Checks if the input has a hex prefix and convert it to a Key
+    /// If it has a hex prefix but contains non-hex digits, null is returned
+    public func fromHexOrText(input : Text) : ?Key {
+        switch (Text.stripStart(input, #text "0x")) {
+            case (?hex) { fromHex(hex) };
+            case (null) { ?fromText(input) };
+        };
     };
 
     /// Convert an array of bytes into a Key
@@ -59,6 +78,10 @@ module {
     /// Create a new key by extending `a` by one nibble `b`
     public func append(a : Key, b : Nibble) : Key {
         Array.tabulate(a.size() + 1, func(x : Nat) : Nibble = if (x < a.size()) a[x] else b);
+    };
+
+    public func addPrefix(a : Nibble, key : Key) : Key {
+        Array.tabulate(key.size() + 1, func(x : Nat) : Nibble = if (x == 0) a else key[x - 1]);
     };
 
     /// Generate a human readable Text representation of a Key
