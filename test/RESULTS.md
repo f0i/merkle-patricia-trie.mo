@@ -169,13 +169,26 @@ The final section shows the test result
 - should store this value under the extension
 
 
-# official tests
+# official tests from Ethereum
+
+
+## official tests
 
 - emptyValues
 - branchingTests
 - jeff
 - insert_middle_leaf
 - branch_value_update
+
+## official tests any order
+
+- singleItem
+- dogs
+- puppy
+- foo
+- smallValues
+- testy
+- hex
 
 
 # Test result

@@ -10,21 +10,27 @@ import Key "../../src/Key";
 import Debug "mo:base/Debug";
 import TrieMap "mo:base/TrieMap";
 import Hash "../../src/Hash";
+import Time "mo:base/Time";
+import Int "mo:base/Int";
+import Prim "mo:prim";
+import Trieanyorder "../fixtures/trieanyorder";
 
 module {
     type Value = Value.Value;
     type Hash = Hash.Hash;
 
     public func tests() {
-        chapter "official tests";
-        do {
+        chapter "official tests from Ethereum";
 
+        section "official tests";
+        do {
             for ((name, testData) in Trietest.data.tests.vals()) {
+                test name;
+
                 var trie = Trie.init();
                 var trieWithDB = Trie.init();
                 var db = TrieMap.TrieMap<Hash, Trie.Node>(Hash.equal, Hash.hash);
 
-                test name;
                 let inputs = testData.input;
                 let expect = testData.root;
 
@@ -64,33 +70,44 @@ module {
                 assert Trie.hashHex(trieWithDB) == expect;
             };
         };
-    };
 
-    /*
-    tape(
-        'official tests any order ', async function(t) {
-            const jsonTests = require('./fixtures/trieanyorder.json').tests
-            const testNames = Object.keys(jsonTests)
-            let trie = new Trie() for (const testName of testNames) {
-                const test = jsonTests[testName] const keys = Object.keys(test.in) let key : any for (key of keys) {
-                    let val = test.in [key]
+        let a = Prim.rts_heap_size();
 
-                    if (key.slice(0, 2) == = '0x') {
-                        key = Buffer.from(key.slice(2), 'hex');
+        section "official tests any order";
+        do {
+            for ((name, testData) in Trieanyorder.data.tests.vals()) {
+                test name;
+
+                var trie = Trie.init();
+                var trieWithDB = Trie.init();
+                var db = TrieMap.TrieMap<Hash, Trie.Node>(Hash.equal, Hash.hash);
+
+                let inputs = testData.input;
+                let expect = testData.root;
+
+                for ((keyData, value) in inputs.vals()) {
+                    let key = unwrapOpt(Key.fromHexOrText(keyData));
+                    switch (value) {
+                        case (?val) {
+                            let bin : Value = unwrapOpt(Value.fromHexOrText(val));
+                            //Debug.print("put " # Key.toText(key) # ": " # Value.toHex(bin));
+                            trie := Trie.put(trie, key, bin);
+                            trieWithDB := unwrap(Trie.putWithDB(trieWithDB, key, bin, db));
+                        };
+                        case (null) {
+                            //Debug.print("delete " # Key.toText(key));
+                            trie := Trie.delete(trie, key);
+                            trieWithDB := unwrap(Trie.deleteWithDB(trieWithDB, key, db));
+                        };
                     };
-
-                    if (val != = undefined && val != = null && val.slice(0, 2) === '0x') {
-                        val = Buffer.from(val.slice(2), 'hex');
-                    };
-
-                    await trie.put(Buffer.from(key), Buffer.from(val));
+                    assert Trie.nodeToText(trie) == Trie.nodeToTextWithDB(trieWithDB, db);
                 };
-                t.equal('0x' + trie.root().toString('hex'), test.root)
-                trie = new Trie();
+
+                assert Trie.hashHex(trie) == expect;
+                assert Trie.hashHex(trieWithDB) == expect;
             };
-            t.end();
         };
-    );
-*/
+
+    };
 
 };

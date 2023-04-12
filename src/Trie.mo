@@ -518,16 +518,10 @@ module {
 
   /// Change the node an extension is pointing to
   func updateExtensionWithDB(ext : Extension, newNode : Node, db : DB) : Result<Node, Hash> {
-    switch (newNode) {
-      case (#hash hash) {
-        switch (db.get(hash)) {
-          case (?node) { #ok(updateExtension(ext, node)) };
-          case (null) { #err hash };
-        };
-      };
-      case (_) { #ok(updateExtension(ext, newNode)) };
+    switch (resolveWithDB(newNode, db)) {
+      case (#ok node) { #ok(updateExtension(ext, node)) };
+      case (#err hash) { #err hash };
     };
-
   };
 
   /// Create a leaf node
@@ -785,6 +779,78 @@ module {
           case (?(n, tail)) {
             switch (n.node) {
               case (#hash(hash)) { Debug.trap("Trie.toIter: incomplete trie") };
+              case (#nul) {
+                // ignore null
+                stack := tail;
+                return next();
+              };
+              case (#extension(ext)) {
+                // replace extension on the stack with the branch it points to
+                let newKey = Key.join(n.key, ext.key);
+                stack := ?({ key = newKey; node = ext.node }, tail);
+                return next();
+              };
+              case (#leaf(leaf)) {
+                // leaf will return the value
+                stack := tail;
+                return ?(Key.join(n.key, leaf.key), leaf.value);
+              };
+              case (#branch(branch)) {
+                // add each node to the stack, if branch has a value return it
+                stack := tail;
+                for (i in Iter.revRange(15, 0)) {
+                  let index = Int.abs(i);
+                  switch (branch.nodes[index]) {
+                    case (#nul) {};
+                    case (_) {
+                      stack := ?(
+                        {
+                          key = Key.append(n.key, Nat8.fromNat(index));
+                          node = branch.nodes[index];
+                        },
+                        stack,
+                      );
+                    };
+                  };
+                };
+                switch (branch.value) {
+                  case (?value) {
+                    return ?(n.key, value);
+                  };
+                  case (null) { return next() };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+
+  /// Get an Iter to get all Key/Value pairs
+  /// Hashes that can't be resolved with the database will be ignored
+  public func toIterWithDB(trie : Trie, db : DB) : Iter.Iter<(Key, Value)> {
+    type StackElement = { key : Key; node : Node };
+
+    object {
+      var stack : List.List<StackElement> = ?({ key = []; node = trie }, null);
+
+      public func next() : ?(Key, Value) {
+        switch (stack) {
+          case (null) { return null };
+          case (?(n, tail)) {
+            switch (n.node) {
+              case (#hash(hash)) {
+                switch (db.get(hash)) {
+                  case (?node) {
+                    stack := ?({ key = n.key; node }, stack);
+                  };
+                  case (null) {
+                    Debug.print("Trie.toIterWithDB: missing hash " # Hash.toHex(hash));
+                  };
+                };
+                return next();
+              };
               case (#nul) {
                 // ignore null
                 stack := tail;
