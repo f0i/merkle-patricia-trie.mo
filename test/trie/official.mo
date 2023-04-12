@@ -35,19 +35,33 @@ module {
                             let bin : Value = unwrapOpt(Value.fromHexOrText(val));
                             //Debug.print("put " # Key.toText(key) # ": " # Value.toHex(bin));
                             trie := Trie.put(trie, key, bin);
-                            trieWithDB := unwrap(Trie.putWithDB(trie, key, bin, db));
+                            trieWithDB := unwrap(Trie.putWithDB(trieWithDB, key, bin, db));
                         };
                         case (null) {
                             //Debug.print("delete " # Key.toText(key));
                             trie := Trie.delete(trie, key);
+                            trieWithDB := unwrap(Trie.deleteWithDB(trieWithDB, key, db));
                         };
                     };
+                    //Debug.print("---------------------");
+                    //Debug.print(Trie.nodeToText(trie));
+                    //Debug.print(Trie.nodeToTextWithDB(trieWithDB, db));
+                    assert Trie.nodeToText(trie) == Trie.nodeToTextWithDB(trieWithDB, db);
                 };
 
+                //Debug.print("---------------------");
+                //Debug.print(Trie.nodeToText(trie));
+                //Debug.print(Trie.nodeToTextWithDB(trieWithDB, db));
                 //Debug.print("actual hash   " # Trie.hashHex(trie));
+                //Debug.print("hash withDB   " # Trie.hashHex(trieWithDB));
                 //Debug.print("expected hash " # expect);
+                //Debug.print("---------------------");
+                //for ((k, v) in Trie.toIter(trie)) {
+                //    Debug.print("entry " # Key.toText(k) # ": " # Value.toHex(v));
+                //};
+
                 assert Trie.hashHex(trie) == expect;
-                //TODO: assert Trie.hashHex(trieWithDB) == expect;
+                assert Trie.hashHex(trieWithDB) == expect;
             };
         };
     };

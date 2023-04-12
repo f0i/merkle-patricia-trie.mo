@@ -169,7 +169,7 @@ module {
   /// Delete a key from a trie
   /// Similar to  the `delete` function, but uses a DB to store hash/Node pairs
   /// This should not be mixed with `put` or `delete` function or it can cause invalid tries or traps!
-  public func deleteWithDB(trie : Trie, key : Key, db : DB) : Result<Trie, Text> {
+  public func deleteWithDB(trie : Trie, key : Key, db : DB) : Result<Trie, Hash> {
     return putWithDB(trie, key, Value.empty, db);
   };
 
@@ -291,7 +291,7 @@ module {
           toUpdate := tail;
         };
         case (?((k, n), _)) {
-          Debug.trap("in findPath: expected #branch or #extension but got " # nodeToText(n) # " at " # Key.toText(k));
+          Debug.trap("Trie.put: expected findPath.stack to only contain #branch or #extension but got " # nodeToText(n) # " at " # Key.toText(k));
         };
         case (null) {
           return replacementNode;
@@ -345,6 +345,21 @@ module {
     return #branch(newBranch);
   };
 
+  func updateBranchWithDB(branch : Branch, key : Key, node : Node, db : DB) : Result<Node, Hash> {
+    var nodes = Array.thaw<Node>(branch.nodes);
+    nodes[Key.toIndex(key)] := node;
+    let newBranch : Branch = {
+      nodes = Array.freeze(nodes);
+      value = branch.value;
+      var hash = null;
+    };
+    if (isEmpty(node)) {
+      return simplifyBranchWithDB(newBranch, db);
+    } else {
+      return #ok(#branch(newBranch));
+    };
+  };
+
   func simplifyBranch(branch : Branch) : Node {
     var values = 0;
     var index = 0;
@@ -375,6 +390,59 @@ module {
     };
   };
 
+  func simplifyBranchWithDB(branch : Branch, db : DB) : Result<Node, Hash> {
+    var values = 0;
+    var index = 0;
+    if (branch.value != null) {
+      values += 1;
+    };
+    for (i in Iter.range(0, 15)) {
+      if (not isEmpty(branch.nodes[i])) {
+        values += 1;
+        index := i;
+      };
+
+      // Check if at least two values are set
+      if (values > 1) return #ok(#branch(branch));
+    };
+
+    // no value set
+    if (values == 0) return #ok(#nul);
+
+    // only one value set
+    switch (branch.value) {
+      case (?value) {
+        return #ok(createLeaf(Key.fromKeyBytes([]), value));
+      };
+      case (null) {
+        switch (resolveWithDB(branch.nodes[index], db)) {
+          case (#ok(node)) {
+            return #ok(addKeyPrefix(node, Nibble.fromNat(index)));
+          };
+          case (#err hash) {
+            return #err(hash);
+          };
+        };
+      };
+    };
+  };
+
+  /// Get a node from the database
+  /// Returns the node parameter if it is not a #hash
+  /// Returns the hash if it could not be found in the database
+  func resolveWithDB(node : Node, db : DB) : Result<Node, Hash> {
+    switch (node) {
+      case (#hash hash) {
+        switch (db.get(hash)) {
+          case (?val) { #ok val };
+          case (null) { #err hash };
+        };
+      };
+      case (_) { #ok(node) };
+    };
+  };
+
+  /// Add a nibble in front of the nodes key
   func addKeyPrefix(node : Node, index : Nibble) : Node {
     switch (node) {
       case (#nul) { #nul };
@@ -386,7 +454,7 @@ module {
         createExtension(Key.addPrefix(index, ext.key), ext.node);
       };
       case (#hash hash) {
-        // TODO?: handle this case
+        Debug.trap("unexpected hash in addLeyPrefix");
         createBranch([index], node, [index], node);
       };
     };
@@ -394,11 +462,27 @@ module {
 
   /// Change the value for a branch
   func updateBranchValue(branch : Branch, value : ?Value) : Node {
-    return #branch({
+    let newBranch : Branch = {
       nodes = branch.nodes;
       value = value;
       var hash = null;
-    });
+    };
+    switch (value) {
+      case (?value) #branch(newBranch);
+      case (null) simplifyBranch(newBranch);
+    };
+  };
+
+  func updateBranchValueWithDB(branch : Branch, value : ?Value, db : DB) : Result<Node, Hash> {
+    let newBranch : Branch = {
+      nodes = branch.nodes;
+      value = value;
+      var hash = null;
+    };
+    switch (value) {
+      case (?value) #ok(#branch(newBranch));
+      case (null) simplifyBranchWithDB(newBranch, db);
+    };
   };
 
   /// Change the node an extension is pointing to
@@ -430,6 +514,20 @@ module {
         };
       };
     };
+  };
+
+  /// Change the node an extension is pointing to
+  func updateExtensionWithDB(ext : Extension, newNode : Node, db : DB) : Result<Node, Hash> {
+    switch (newNode) {
+      case (#hash hash) {
+        switch (db.get(hash)) {
+          case (?node) { #ok(updateExtension(ext, node)) };
+          case (null) { #err hash };
+        };
+      };
+      case (_) { #ok(updateExtension(ext, newNode)) };
+    };
+
   };
 
   /// Create a leaf node
@@ -739,6 +837,7 @@ module {
   public func isEmpty(trie : Trie) : Bool {
     switch (trie) {
       case (#nul) { true };
+      case (#hash hash) { hash == Hash.empty };
       case (_) { false };
     };
   };
@@ -770,7 +869,7 @@ module {
   public func nodeToText(node : Node) : Text {
     switch (node) {
       case (#nul) { "<>" };
-      case (#hash(hash)) { Hash.toHex(hash) };
+      case (#hash(hash)) { "Hash" # Hash.toHex(hash) };
       case (#branch(branch)) {
         let branches = Array.map(branch.nodes, nodeToText);
         switch (branch.value) {
@@ -783,10 +882,39 @@ module {
         };
       };
       case (#leaf(leaf)) {
-        "leaf(" # Key.toText(leaf.key) # ", " # Value.toHex(leaf.value) # ")";
+        "leaf(" # Key.toText(leaf.key) # ", {" # Value.toHex(leaf.value) # "})";
       };
       case (#extension(ext)) {
         "extension(" # Key.toText(ext.key) # ": " # nodeToText(ext.node) # ")";
+      };
+    };
+  };
+
+  public func nodeToTextWithDB(node : Node, db : DB) : Text {
+    switch (node) {
+      case (#nul) { "<>" };
+      case (#hash(hash)) {
+        switch (db.get(hash)) {
+          case (?node) { nodeToTextWithDB(node, db) };
+          case (null) { "Hash" # Hash.toHex(hash) };
+        };
+      };
+      case (#branch(branch)) {
+        let branches = Array.map(branch.nodes, func(n : Node) : Text = nodeToTextWithDB(n, db));
+        switch (branch.value) {
+          case (null) {
+            "branch(" # Text.join(",", branches.vals()) # ")";
+          };
+          case (?value) {
+            "branchV(" # Text.join(",", branches.vals()) # " ; " # valueToText(value) # ")";
+          };
+        };
+      };
+      case (#leaf(leaf)) {
+        "leaf(" # Key.toText(leaf.key) # ", {" # Value.toHex(leaf.value) # "})";
+      };
+      case (#extension(ext)) {
+        "extension(" # Key.toText(ext.key) # ": " # nodeToTextWithDB(ext.node, db) # ")";
       };
     };
   };
@@ -806,7 +934,7 @@ module {
 
   /// Get placeholder text for any value
   public func valueToText(value : Value) : Text {
-    "{}";
+    "{" # Value.toHex(value) # "}";
   };
 
   /// Interface for a database
@@ -818,7 +946,7 @@ module {
   /// Add a value into a trie
   /// Similar to  the `put` function, but uses a DB to store hash/Node pairs
   /// This should not be mixed with `put` or `delete` function or it can cause invalid tries or traps!
-  public func putWithDB(trie : Trie, key : Key, value : Value, db : DB) : Result<Trie, Text> {
+  public func putWithDB(trie : Trie, key : Key, value : Value, db : DB) : Result<Trie, Hash> {
     let path = findPathWithDB(trie, key, null, db);
 
     let { node; remaining; stack; mismatch } = path;
@@ -828,7 +956,7 @@ module {
       case (#leaf _, _) { (node, true) }; // update existing leaf
       case (#branch _, _) { (node, true) }; // update existing branch value
       case (#hash hash, _) {
-        return #err("missing node for hash " # Hash.toHex(hash));
+        return #err(hash);
       };
       case (_, mismatch) { (mismatch, false) };
     };
@@ -839,10 +967,10 @@ module {
       case (#branch branch) {
         // replace existing
         if (remaining != []) Debug.trap("Can't get stuck on a branch with non empty key: " # Key.toText(remaining));
-        if (delete) {
-          updateBranchValue(branch, null);
-        } else {
-          updateBranchValue(branch, ?value);
+        let res = updateBranchValueWithDB(branch, (if (delete) null else ?value), db);
+        switch (res) {
+          case (#ok(node)) node;
+          case (#err(hash)) return #err(hash);
         };
       };
       case (#leaf leaf) {
@@ -925,21 +1053,27 @@ module {
     while (true) {
       switch (toUpdate) {
         case (?((key, #branch branch), tail)) {
-          replacementNode := updateBranch(branch, key, replacementNode); // TODO: check key
+          switch (updateBranchWithDB(branch, key, replacementNode, db)) {
+            case (#ok(node)) { replacementNode := node };
+            case (#err(hash)) { return #err(hash) };
+          };
           hash := nodeHash(replacementNode);
           db.put(hash, replacementNode);
           replacementNode := #hash hash;
           toUpdate := tail;
         };
         case (?((key, #extension ext), tail)) {
-          replacementNode := updateExtension(ext, replacementNode);
+          switch (updateExtensionWithDB(ext, replacementNode, db)) {
+            case (#ok(node)) { replacementNode := node };
+            case (#err(hash)) { return #err(hash) };
+          };
           hash := nodeHash(replacementNode);
           db.put(hash, replacementNode);
           replacementNode := #hash hash;
           toUpdate := tail;
         };
         case (?((k, n), _)) {
-          Debug.trap("in findPath: expected #branch or #extension but got " # nodeToText(n) # " at " # Key.toText(k));
+          Debug.trap("Trie.putWithDB: expected findPath.stack to only contain #branch or #extension but got " # nodeToText(n) # " at " # Key.toText(k));
         };
         case (null) {
           return #ok(replacementNode);
