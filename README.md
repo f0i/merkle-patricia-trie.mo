@@ -98,12 +98,6 @@ Using the `put`function to build the trie will use less memory than than using `
 
 Performance is mostly limited by the hashing function used (Sha3/Keccak). Using the `put` function will calculate the hash of each Node on demand when `rootHash` is calculated. Using `putWithDb` will calculate each node hash immediately even for intermediate nodes which are not used in the final trie.
 
-## References
-
-- Specification on [ethereum.org](https://ethereum.org/en/developers/docs/data-structures-and-encoding/patricia-merkle-trie/)
-- TypeScript implementation in [github.com/ethereumjs/.../trie](https://github.com/ethereumjs/ethereumjs-monorepo/tree/master/packages/trie)
-- Medium post with  [Ethereum Merkle Patricia Trie Explained](https://medium.com/@chiqing/merkle-patricia-trie-explained-ae3ac6a7e123)
-
 ## Testing
 
 All test cases can be executed using the `test.sh` script.
@@ -112,32 +106,8 @@ All test cases can be executed using the `test.sh` script.
 ./test.sh
 ```
 
-### REPL
+## References
 
-For interactive debugging, the REPL mode can be used:
-
-```bash
-rlwrap $(vessel bin)/moc $(vessel sources) -i
-```
-
-Then you can import everything and start testing:
-
-```motoko
-import Nibble "src/util/Nibble";
-import Trie "src/MerklePatriciaTrie";
-import Key "src/trie/Key";
-import Buffer "src/util/Buffer";
-import Debug "mo:base/Debug";
-
-type Trie = Trie.Trie;
-type Buffer = Buffer.Buffer;
-type Key = Key.Key;
-
-var trie = Trie.init();
-let key1 = Key.fromKeyBytes([0x12, 0x34]);
-let key2 = Key.fromKeyBytes([0x22, 0x34]);
-trie := Trie.put(trie, key1, {});
-trie := Trie.put(trie, key2, {});
-
-Debug.print(Trie.toText(trie))
-```
+- Specification on [ethereum.org](https://ethereum.org/en/developers/docs/data-structures-and-encoding/patricia-merkle-trie/)
+- TypeScript implementation in [github.com/ethereumjs/.../trie](https://github.com/ethereumjs/ethereumjs-monorepo/tree/master/packages/trie)
+- Medium post with  [Ethereum Merkle Patricia Trie Explained](https://medium.com/@chiqing/merkle-patricia-trie-explained-ae3ac6a7e123)
