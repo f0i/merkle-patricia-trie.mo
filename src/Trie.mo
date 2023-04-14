@@ -57,7 +57,7 @@ module {
   /// An Extension node
   public type Extension = {
     key : Key;
-    node : Node; // TODO: rename to branch
+    node : Node;
     var hash : ?Hash;
   };
 
@@ -113,7 +113,7 @@ module {
         return #nul;
       };
       case (#err(msg)) {
-        // TODO: handle error
+        Debug.print("Trie.nodeDecode error: " # msg);
         return #nul;
       };
     };
@@ -131,9 +131,9 @@ module {
         switch (RLP.decodeValue(raw[i])) {
           case (#ok(value)) { nodes[i] := #hash(value) };
           case (#err(msg)) {
-            Debug.print("rawToBranch: error decoding node " # msg);
+            Debug.print("Trie.rawToBranch: error decoding node " # msg);
             return #nul;
-          }; // TODO? change to `return #err(msg)`
+          };
         };
       } else {
         // RLP encoded node
@@ -150,7 +150,7 @@ module {
       case (#err(msg)) {
         Debug.print("rawToBranch: error decoding value " # msg);
         return #nul;
-      }; // TODO? change to `return #err(msg)`
+      };
     };
 
     let branch : Branch = {
@@ -283,7 +283,8 @@ module {
     while (true) {
       switch (toUpdate) {
         case (?((key, #branch branch), tail)) {
-          replacementNode := updateBranch(branch, key, replacementNode); // TODO: check key
+          assert key != [];
+          replacementNode := updateBranch(branch, key, replacementNode);
           toUpdate := tail;
         };
         case (?((key, #extension ext), tail)) {
@@ -506,7 +507,7 @@ module {
         createExtension(key, other.node);
       };
       case (#hash hash) {
-        // TODO? handle this case
+        Debug.print("Trie.updateExtension: unexpected #hash " # Hash.toHex(hash));
         #extension {
           key = ext.key;
           node = newNode;

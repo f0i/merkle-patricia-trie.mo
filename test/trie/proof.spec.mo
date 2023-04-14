@@ -37,9 +37,7 @@ module {
     };
 
     public func ethereumjsTests() {
-        chapter "Proofs";
-
-        section "simple merkle proofs generation and verification";
+        chapter "Simple merkle proofs generation and verification";
         var trie = Trie.init();
 
         section "create a merkle proof and verify it";

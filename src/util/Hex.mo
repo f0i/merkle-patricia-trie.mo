@@ -15,7 +15,6 @@ module {
     public func toText(bytes : [Nat8]) : Text {
         var out = "";
         for (byte in bytes.vals()) {
-            // TODO: optimize by using a Buffer and join?
             out := out # encodeByte(byte);
         };
         return out;

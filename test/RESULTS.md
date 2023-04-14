@@ -107,10 +107,7 @@ The final section shows the test result
 - deserialize leaf
 
 
-# Proofs
-
-
-## simple merkle proofs generation and verification
+# Simple merkle proofs generation and verification
 
 
 ## create a merkle proof and verify it
@@ -119,11 +116,17 @@ The final section shows the test result
 - verify proofs
 - Expected value at 'key2' to be null
 - Expected value for a random key to be null
+Trie.nodeDecode error: RPL.decode error: could not determine type
 - extra nodes are just ignored
+Trie.nodeDecode error: RPL.decode error: could not determine type
+Trie.nodeDecode error: RPL.decode error: unexpected RLP type #singleByte
 - to fail our proof we can request a proof for one key, and try to use that proof on another key
 - we can also corrupt a valid proof
+Trie.nodeDecode error: RPL.decode error: unexpected RLP type #singleByte
 - test an invalid exclusion proof by creating a valid exclusion proof (and later making it non-null)
+Trie.nodeDecode error: RPL.decode error: could not determine type
 - now make the key non-null so the exclusion proof becomes invalid
+Trie.nodeDecode error: RPL.decode error: could not determine type
 - create a merkle proof and verify it with a single long key
 - create a merkle proof and verify it with a single short key
 - create a merkle proof and verify it whit keys in the middle 

@@ -103,7 +103,7 @@ module {
 
     // Decode one level of an RLP encoded array
     // Elements in lists will still be encoded
-    public func decode(input : [Nat8]) : { #ok : [[Nat8]]; #err : Text } {
+    public func decode(input : [Nat8]) : Result<[[Nat8]], Text> {
         let info = getPrefixInfo(input);
         switch (info) {
             case (?{ rlpType = #shortString; data = 0; prefix = 1 }) {
@@ -114,8 +114,7 @@ module {
             };
             case (?{ rlpType = #shortList; data; prefix }) {
                 if (input.size() != (data +prefix)) {
-                    // TODO: Handle errors
-                    Debug.trap("RLP.decode error: unexpected number of bytes");
+                    return #err("RLP.decode error: unexpected number of bytes");
                 };
                 let remaining = Util.dropBytes(input, prefix);
                 return splitMultiple(remaining);
@@ -170,7 +169,6 @@ module {
                                 },
                             )
                         );
-                        #err("TODO: implement splitMultiple");
                     };
 
                 };
@@ -226,7 +224,8 @@ module {
             };
             case (#longString) {
                 let lengthLength = Int.abs(prefix - 0xb7); // Int.abs is here to prevent warning about possible trap
-                // TODO: check data size
+                // check data size
+                if (encodedData.size() < (lengthLength + 1)) return null;
                 var length = 0;
                 for (i in Iter.range(1, lengthLength)) {
                     length *= 0x100;
@@ -239,7 +238,8 @@ module {
             };
             case (#longList) {
                 let lengthLength = Int.abs(prefix - 0xf7);
-                // TODO: check data size
+                // check data size
+                if (encodedData.size() < (lengthLength + 1)) return null;
                 var length = 0;
                 for (i in Iter.range(1, lengthLength)) {
                     length *= 0x100;
