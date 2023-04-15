@@ -1,6 +1,6 @@
 [package]
 name = "merkle-patricia-trie"
-version = "0.1.3"
+version = "0.2.0"
 description = "A Merkle Patricia Trie implementation following the Ethereum specification"
 repository = "https://github.com/f0i/merkle-patricia-trie.mo"
 
