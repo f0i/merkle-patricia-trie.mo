@@ -21,6 +21,27 @@ func fromText(text : Text) : xref:#type.Key[Key]
 
 Convert text into a Key
 
+[[fromHex]]
+== fromHex
+
+[source.no-repl,motoko,subs=+macros]
+----
+func fromHex(hex : Text) : ?xref:#type.Key[Key]
+----
+
+Convert hex Text into a Key
+
+[[fromHexOrText]]
+== fromHexOrText
+
+[source.no-repl,motoko,subs=+macros]
+----
+func fromHexOrText(input : Text) : ?xref:#type.Key[Key]
+----
+
+Checks if the input has a hex prefix and convert it to a Key
+If it has a hex prefix but contains non-hex digits, null is returned
+
 [[fromKeyBytes]]
 == fromKeyBytes
 
@@ -82,6 +103,16 @@ func append(a : xref:#type.Key[Key], b : xref:#type.Nibble[Nibble]) : xref:#type
 ----
 
 Create a new key by extending `a` by one nibble `b`
+
+[[addPrefix]]
+== addPrefix
+
+[source.no-repl,motoko,subs=+macros]
+----
+func addPrefix(a : xref:#type.Nibble[Nibble], key : xref:#type.Key[Key]) : xref:#type.Key[Key]
+----
+
+
 
 [[toText]]
 == toText

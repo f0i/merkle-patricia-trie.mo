@@ -12,6 +12,17 @@ func unwrap<T, E>(input : xref:#type.Result[Result]<T, E>) : T
 Get the success value from a Result
 Traps if result is #err
 
+[[unwrapOpt]]
+== unwrapOpt
+
+[source.no-repl,motoko,subs=+macros]
+----
+func unwrapOpt<T>(input : ?T) : T
+----
+
+Get the success value from an Option
+Traps if result is null
+
 [[dropBytes]]
 == dropBytes
 

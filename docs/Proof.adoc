@@ -32,6 +32,17 @@ func create(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key]) : xref:#typ
 Create a proof
 `trie` must be a full trie (no #hash node in the path of `key`)
 
+[[createWithDB]]
+== createWithDB
+
+[source.no-repl,motoko,subs=+macros]
+----
+func createWithDB(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key], db : xref:#type.DB[DB]) : xref:#type.Result[Result]<xref:#type.Proof[Proof], xref:#type.Hash[Hash]>
+----
+
+Create a proof
+If a #hash node in the path is not found in `db`, the hash of this node is return as an error
+
 [[verify]]
 == verify
 

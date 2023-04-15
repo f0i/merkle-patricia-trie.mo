@@ -41,6 +41,17 @@ func fromHex(hex : Text) : ?xref:#type.Value[Value]
 
 Convert a hex Text into a Value
 
+[[fromHexOrText]]
+== fromHexOrText
+
+[source.no-repl,motoko,subs=+macros]
+----
+func fromHexOrText(input : Text) : ?xref:#type.Value[Value]
+----
+
+Checks if the input has a hex prefix and convert it to a Value accordingly
+If it has a hex prefix but contains non-hex digits, null is returned
+
 [[fromArray]]
 == fromArray
 

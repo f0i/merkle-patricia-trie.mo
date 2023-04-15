@@ -1,5 +1,5 @@
-[[module.Trie]]
-= Trie
+[[module.TrieWithDB]]
+= TrieWithDB
 
 [[type.Trie]]
 == Trie
@@ -10,6 +10,26 @@ type Trie = xref:internal/Trie.adoc#type.Trie[Trie.Trie]
 ----
 
 Data structure and functions to manipulate and query a Merkle Patricia Trie.
+
+[[type.Node]]
+== Node
+
+[source.no-repl,motoko,subs=+macros]
+----
+type Node = xref:internal/Trie.adoc#type.Node[Trie.Node]
+----
+
+A Node object
+
+[[type.DB]]
+== DB
+
+[source.no-repl,motoko,subs=+macros]
+----
+type DB = xref:internal/Trie.adoc#type.DB[Trie.DB]
+----
+
+Interface for a database
 
 [[init]]
 == init
@@ -26,7 +46,7 @@ Create an empty trie
 
 [source.no-repl,motoko,subs=+macros]
 ----
-func put(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key], value : xref:#type.Value[Value]) : xref:#type.Trie[Trie]
+func put(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key], value : xref:#type.Value[Value], db : xref:#type.DB[DB]) : xref:#type.Result[Result]<xref:#type.Trie[Trie], xref:#type.Hash[Hash]>
 ----
 
 Add a value into a trie
@@ -37,7 +57,7 @@ If value is empty, the key will be deleted
 
 [source.no-repl,motoko,subs=+macros]
 ----
-func get(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key]) : ?xref:#type.Value[Value]
+func get(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key], db : xref:#type.DB[DB]) : xref:#type.Result[Result]<?xref:#type.Value[Value], Text>
 ----
 
 Get the value for a specific key
@@ -47,7 +67,7 @@ Get the value for a specific key
 
 [source.no-repl,motoko,subs=+macros]
 ----
-func delete(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key]) : xref:#type.Trie[Trie]
+func delete(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key], db : xref:#type.DB[DB]) : xref:#type.Result[Result]<xref:#type.Trie[Trie], xref:#type.Hash[Hash]>
 ----
 
 Delete a key from a trie
@@ -77,7 +97,7 @@ Get root hash as a hex Text
 
 [source.no-repl,motoko,subs=+macros]
 ----
-func entries(trie : xref:#type.Trie[Trie]) : xref:#type.Iter[Iter]<(xref:#type.Key[Key], xref:#type.Value[Value])>
+func entries(trie : xref:#type.Trie[Trie], db : xref:#type.DB[DB]) : xref:#type.Iter[Iter]<(xref:#type.Key[Key], xref:#type.Value[Value])>
 ----
 
 Get an Iter to get all Key/Value pairs
@@ -97,7 +117,7 @@ Check if Trie `a` is equal to Trie `b`
 
 [source.no-repl,motoko,subs=+macros]
 ----
-func toText(trie : xref:#type.Trie[Trie]) : Text
+func toText(trie : xref:#type.Trie[Trie], db : xref:#type.DB[DB]) : Text
 ----
 
 Get the whole trie as a human readable Text

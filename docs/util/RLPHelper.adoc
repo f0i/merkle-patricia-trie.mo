@@ -76,7 +76,7 @@ func decodeValue(input : pass:[[]Nat8pass:[]]) : xref:#type.Result[Result]<xref:
 
 [source.no-repl,motoko,subs=+macros]
 ----
-func decode(input : pass:[[]Nat8pass:[]]) : {#ok : pass:[[]pass:[[]Nat8pass:[]]pass:[]]; #err : Text}
+func decode(input : pass:[[]Nat8pass:[]]) : xref:#type.Result[Result]<pass:[[]pass:[[]Nat8pass:[]]pass:[]], Text>
 ----
 
 

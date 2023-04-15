@@ -104,3 +104,13 @@ func replaceHigh(byte : Nat8, high : xref:#type.Nibble[Nibble]) : Nat8
 
 
 
+[[fromNat]]
+== fromNat
+
+[source.no-repl,motoko,subs=+macros]
+----
+func fromNat(nat : Nat) : xref:#type.Nibble[Nibble]
+----
+
+
+

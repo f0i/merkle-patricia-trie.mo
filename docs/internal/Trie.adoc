@@ -1,0 +1,324 @@
+[[module.internal/Trie]]
+= internal/Trie
+
+[[type.Trie]]
+== Trie
+
+[source.no-repl,motoko,subs=+macros]
+----
+type Trie = xref:#type.Node[Node]
+----
+
+
+
+[[type.Node]]
+== Node
+
+[source.no-repl,motoko,subs=+macros]
+----
+type Node = {#nul; #branch : xref:#type.Branch[Branch]; #leaf : xref:#type.Leaf[Leaf]; #extension : xref:#type.Extension[Extension]; #hash : xref:#type.Hash[Hash]}
+----
+
+A Node object
+
+[[type.Branch]]
+== Branch
+
+[source.no-repl,motoko,subs=+macros]
+----
+type Branch = { nodes : pass:[[]xref:#type.Node[Node]pass:[]]; value : ?xref:#type.Value[Value]; var hash : ?xref:#type.Hash[Hash] }
+----
+
+A Branch node
+
+[[type.Leaf]]
+== Leaf
+
+[source.no-repl,motoko,subs=+macros]
+----
+type Leaf = { key : xref:#type.Key[Key]; value : xref:#type.Value[Value]; var hash : ?xref:#type.Hash[Hash] }
+----
+
+A Leaf node
+
+[[type.Extension]]
+== Extension
+
+[source.no-repl,motoko,subs=+macros]
+----
+type Extension = { key : xref:#type.Key[Key]; node : xref:#type.Node[Node]; var hash : ?xref:#type.Hash[Hash] }
+----
+
+An Extension node
+
+[[init]]
+== init
+
+[source.no-repl,motoko,subs=+macros]
+----
+func init() : xref:#type.Trie[Trie]
+----
+
+Create an empty trie
+
+[[nodeDecode]]
+== nodeDecode
+
+[source.no-repl,motoko,subs=+macros]
+----
+func nodeDecode(rlpData : pass:[[]Nat8pass:[]]) : xref:#type.Node[Node]
+----
+
+Deserialize RLP encoded node
+
+[[delete]]
+== delete
+
+[source.no-repl,motoko,subs=+macros]
+----
+func delete(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key]) : xref:#type.Trie[Trie]
+----
+
+Delete a key from a trie
+
+[[deleteWithDB]]
+== deleteWithDB
+
+[source.no-repl,motoko,subs=+macros]
+----
+func deleteWithDB(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key], db : xref:#type.DB[DB]) : xref:#type.Result[Result]<xref:#type.Trie[Trie], xref:#type.Hash[Hash]>
+----
+
+Delete a key from a trie
+Similar to  the `delete` function, but uses a DB to store hash/Node pairs
+This should not be mixed with `put` or `delete` function or it can cause invalid tries or traps!
+
+[[put]]
+== put
+
+[source.no-repl,motoko,subs=+macros]
+----
+func put(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key], value : xref:#type.Value[Value]) : xref:#type.Trie[Trie]
+----
+
+Add a value into a trie
+If value is empty, the key will be deleted
+
+[[createLeaf]]
+== createLeaf
+
+[source.no-repl,motoko,subs=+macros]
+----
+func createLeaf(key : xref:#type.Key[Key], value : xref:#type.Value[Value]) : xref:#type.Node[Node]
+----
+
+Create a leaf node
+
+[[get]]
+== get
+
+[source.no-repl,motoko,subs=+macros]
+----
+func get(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key]) : ?xref:#type.Value[Value]
+----
+
+Get the value for a specific key
+
+[[getWithDB]]
+== getWithDB
+
+[source.no-repl,motoko,subs=+macros]
+----
+func getWithDB(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key], db : xref:#type.DB[DB]) : xref:#type.Result[Result]<?xref:#type.Value[Value], Text>
+----
+
+Get the value for a specific key
+
+[[nodeValue]]
+== nodeValue
+
+[source.no-repl,motoko,subs=+macros]
+----
+func nodeValue(node : xref:#type.Node[Node]) : ?xref:#type.Value[Value]
+----
+
+return the value of a node or null if no value is set
+
+[[nodeHash]]
+== nodeHash
+
+[source.no-repl,motoko,subs=+macros]
+----
+func nodeHash(node : xref:#type.Node[Node]) : xref:#type.Hash[Hash]
+----
+
+Function `H(x)` where `x` is `RLP(node)` and `H(x) = keccak256(x) if len(x) >= 32 else x`
+
+[[nodeSerialize]]
+== nodeSerialize
+
+[source.no-repl,motoko,subs=+macros]
+----
+func nodeSerialize(node : xref:#type.Node[Node]) : pass:[[]Nat8pass:[]]
+----
+
+RLP encode a Node
+
+[[rootHash]]
+== rootHash
+
+[source.no-repl,motoko,subs=+macros]
+----
+func rootHash(trie : xref:#type.Trie[Trie]) : xref:#type.Hash[Hash]
+----
+
+Get a root hash of a Trie
+
+[[hashHex]]
+== hashHex
+
+[source.no-repl,motoko,subs=+macros]
+----
+func hashHex(trie : xref:#type.Trie[Trie]) : Text
+----
+
+Get root hash as a hex Text
+
+[[type.Path]]
+== Path
+
+[source.no-repl,motoko,subs=+macros]
+----
+type Path = { node : xref:#type.Node[Node]; stack : xref:#type.List[List]<(xref:#type.Key[Key], xref:#type.Node[Node])>; remaining : xref:#type.Key[Key]; mismatch : xref:#type.Node[Node] }
+----
+
+Internal information from querying a trie
+
+[[findPath]]
+== findPath
+
+[source.no-repl,motoko,subs=+macros]
+----
+func findPath(node : xref:#type.Node[Node], key : xref:#type.Key[Key], stack : xref:#type.List[List]<(xref:#type.Key[Key], xref:#type.Node[Node])>) : xref:#type.Path[Path]
+----
+
+Find the a path in a node and return the path to get there.
+If no node was found at the given key, the part that exists will be
+returned as `stack` and the rest of the key will be returned as `remaining`.
+
+[[findPathWithDB]]
+== findPathWithDB
+
+[source.no-repl,motoko,subs=+macros]
+----
+func findPathWithDB(node : xref:#type.Node[Node], key : xref:#type.Key[Key], stack : xref:#type.List[List]<(xref:#type.Key[Key], xref:#type.Node[Node])>, db : xref:#type.DB[DB]) : xref:#type.Path[Path]
+----
+
+Find the a path in a node and return the path to get there.
+Similar to `findPath`, but also looks up nodes in a DB
+
+[[toIter]]
+== toIter
+
+[source.no-repl,motoko,subs=+macros]
+----
+func toIter(trie : xref:#type.Trie[Trie]) : Iter.Iter<(xref:#type.Key[Key], xref:#type.Value[Value])>
+----
+
+Get an Iter to get all Key/Value pairs
+This should only be called on a tree build with `put` (not `putWithDB`),
+otherwise it can cause a trap!
+
+[[toIterWithDB]]
+== toIterWithDB
+
+[source.no-repl,motoko,subs=+macros]
+----
+func toIterWithDB(trie : xref:#type.Trie[Trie], db : xref:#type.DB[DB]) : Iter.Iter<(xref:#type.Key[Key], xref:#type.Value[Value])>
+----
+
+Get an Iter to get all Key/Value pairs
+Hashes that can't be resolved with the database will be ignored
+
+[[isEmpty]]
+== isEmpty
+
+[source.no-repl,motoko,subs=+macros]
+----
+func isEmpty(trie : xref:#type.Trie[Trie]) : Bool
+----
+
+Check if a Trie is empty
+
+[[nodeEqual]]
+== nodeEqual
+
+[source.no-repl,motoko,subs=+macros]
+----
+func nodeEqual(a : xref:#type.Node[Node], b : xref:#type.Node[Node]) : Bool
+----
+
+Check if Node `a` is equal to Node `b`
+
+[[equal]]
+== equal
+
+[source.no-repl,motoko,subs=+macros]
+----
+func equal(a : xref:#type.Trie[Trie], b : xref:#type.Trie[Trie]) : Bool
+----
+
+Check if Trie `a` is equal to Trie `b`
+
+[[nodeToText]]
+== nodeToText
+
+[source.no-repl,motoko,subs=+macros]
+----
+func nodeToText(node : xref:#type.Node[Node]) : Text
+----
+
+Get a node as a human readable Text
+
+[[nodeToTextWithDB]]
+== nodeToTextWithDB
+
+[source.no-repl,motoko,subs=+macros]
+----
+func nodeToTextWithDB(node : xref:#type.Node[Node], db : xref:#type.DB[DB]) : Text
+----
+
+
+
+[[pathToText]]
+== pathToText
+
+[source.no-repl,motoko,subs=+macros]
+----
+func pathToText(path : xref:#type.Path[Path]) : Text
+----
+
+Get path info as a human readable Text
+
+[[type.DB]]
+== DB
+
+[source.no-repl,motoko,subs=+macros]
+----
+type DB = { put : (xref:#type.Hash[Hash], xref:#type.Node[Node]) -> (); get : xref:#type.Hash[Hash] -> ?xref:#type.Node[Node] }
+----
+
+Interface for a database
+
+[[putWithDB]]
+== putWithDB
+
+[source.no-repl,motoko,subs=+macros]
+----
+func putWithDB(trie : xref:#type.Trie[Trie], key : xref:#type.Key[Key], value : xref:#type.Value[Value], db : xref:#type.DB[DB]) : xref:#type.Result[Result]<xref:#type.Trie[Trie], xref:#type.Hash[Hash]>
+----
+
+Add a value into a trie
+Similar to  the `put` function, but uses a DB to store hash/Node pairs
+This should not be mixed with `put` or `delete` function or it can cause invalid tries or traps!
+
