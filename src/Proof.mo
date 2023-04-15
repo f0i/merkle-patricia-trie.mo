@@ -5,8 +5,9 @@ import TrieMap "mo:base/TrieMap";
 import Hash "Hash";
 import Hex "util/Hex";
 import Key "Key";
-import Trie "Trie";
+import Trie "internal/Trie";
 import Value "Value";
+import Result "mo:base/Result";
 
 /// Functions to create and verify a Proof
 module {
@@ -16,6 +17,8 @@ module {
     type Path = Trie.Path;
     type Trie = Trie.Trie;
     type Value = Value.Value;
+    type DB = Trie.DB;
+    type Result<T, E> = Result.Result<T, E>;
 
     /// Proof data
     public type Proof = [[Nat8]];
@@ -52,6 +55,37 @@ module {
         };
 
         return Array.reverse(Array.freeze(proof));
+    };
+
+    /// Create a proof
+    /// If a #hash node in the path is not found in `db`, the hash of this node is return as an error
+    public func createWithDB(trie : Trie, key : Key, db : DB) : Result<Proof, Hash> {
+        let path : Path = Trie.findPathWithDB(trie, key, null, db);
+        switch (path.node) {
+            case (#hash hash) { return #err(hash) };
+            case (_) {};
+        };
+        let stackSize = List.size(path.stack);
+        var size = stackSize + 1;
+        switch (path.mismatch) {
+            case (#nul) {};
+            case (_) { size += 1 };
+        };
+        var proof = Array.init<[Nat8]>(size, []);
+
+        if (path.remaining == []) {
+            proof[0] := Trie.nodeSerialize(path.node);
+        } else {
+            proof[0] := Trie.nodeSerialize(path.mismatch);
+        };
+
+        var i = 1;
+        for ((k, node) in List.toIter(path.stack)) {
+            proof[i] := Trie.nodeSerialize(node);
+            i += 1;
+        };
+
+        return #ok(Array.reverse(Array.freeze(proof)));
     };
 
     /// Convert a proof to a human readable Text

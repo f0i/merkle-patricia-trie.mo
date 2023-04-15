@@ -1,0 +1,6 @@
+[dependencies]
+base = "0.7.6"
+#merkle-patricia-trie = "0.2.0"
+
+rlp = "https://github.com/relaxed04/rlp-motoko#master"
+sha3 = "https://github.com/hanbu97/motoko-sha3#master"

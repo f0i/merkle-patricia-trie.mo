@@ -1,6 +1,6 @@
 import { chapter; section; test } = "../Test";
 
-import Trie "../../src/Trie";
+import Trie "../../src/internal/Trie";
 import Key "../../src/Key";
 import Debug "mo:base/Debug";
 import Nibble "../../src/util/Nibble";
@@ -14,7 +14,6 @@ import Proof "../../src/Proof";
 
 module {
     type Trie = Trie.Trie;
-    type Path = Trie.Path;
     type Value = Value.Value;
     type Key = Key.Key;
     type Nibble = Nibble.Nibble;

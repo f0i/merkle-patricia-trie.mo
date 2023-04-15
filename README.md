@@ -20,14 +20,25 @@ An alternative package manager is [Vessel](https://github.com/dfinity/vessel).
 Add the repository to `package-set.dhall`:
 
 ```dhall
+...
 let additions = [
   { name = "merkle-patricia-trie"
   , version = "master"
   , repo = "https://github.com/f0i/merkle-patricia-trie.mo"
+  , dependencies = [ "base", "rlp", "sha3" ],
+  },
+  { name = "rlp"
+  , version = "master"
+  , repo = "https://github.com/relaxed04/rlp-motoko"
   , dependencies = [] : List Text
   },
-  ...
+  { name = "sha3"
+  , version = "master"
+  , repo = "https://github.com/hanbu97/motoko-sha3"
+  , dependencies = [] : List Text
+  }
 ] : List Package
+...
 ```
 
 and to the dependencies in `vessel.dhall`:
@@ -47,9 +58,11 @@ Here is a basic example of how to use this library:
 import Trie "mo:merkle-patricia-trie/Trie";
 import Key "mo:merkle-patricia-trie/Key";
 import Value "mo:merkle-patricia-trie/Value";
+import Hash "mo:merkle-patricia-trie/Hash";
 import Proof "mo:merkle-patricia-trie/Proof";
+import Debug "mo:base/Debug";
 
-// Create an empty trie and add a key/value paiir
+// Create an empty trie and add a key/value pair
 var trie = Trie.init();
 trie := Trie.put(trie, Key.fromText("one"), Value.fromText("value1"));
 
@@ -58,7 +71,7 @@ let value = Trie.get(trie, Key.fromText("one"));
 assert value == ?Value.fromText("value1");
 
 // Get the root hash of the trie
-let hash = Trie.rootHash(trie);
+let hash = Trie.hash(trie);
 
 // Create a proof
 let proof = Proof.create(trie, Key.fromText("one"));
@@ -67,10 +80,16 @@ let proof = Proof.create(trie, Key.fromText("one"));
 let proofResult = Proof.verify(hash, Key.fromText("one"), proof);
 
 // Print proof result
-switch(proofResult) {
-  case (#included value) {Debug.print("Proof was valid and returned value " # Value.toHex(value))};
-  case (#excluded) {Debug.print("Proof was valid and key is not included in trie")};
-  case (#invalidProof) {Debug.print("Proof was invalid. Can not make statement about the key")};
+switch (proofResult) {
+    case (#included value) {
+        Debug.print("Proof was valid and returned value " # Value.toHex(value));
+    };
+    case (#excluded) {
+        Debug.print("Proof was valid and key is not included in trie");
+    };
+    case (#invalidProof) {
+        Debug.print("Proof was invalid. Can not make statement about the key");
+    };
 };
 ```
 
@@ -85,9 +104,60 @@ For all available function see the docs:
 
 ### Usage with a separate DB
 
-For each function there is an alternative version with the postfix `WithDb`. This allows you to store paris of Hash/Node in a separate key value store (e.g. [MotokoStableBTree](https://github.com/sardariuss/MotokoStableBTree)).
+There is a second implementation `TrieWithDb` which stores paris of Hash/Node in a separate key value store (e.g. [MotokoStableBTree](https://github.com/sardariuss/MotokoStableBTree)).
 
-**Usage of `put` and `putWithDb` should not be mixed and can cause a trap!**
+To use it, replace the import of `Trie` with `TrieWithDB` and use `Proof.createWithDB` to create proofs:
+
+```mo
+import Trie "mo:merkle-patricia-trie/TrieWithDB";
+import Key "mo:merkle-patricia-trie/Key";
+import Value "mo:merkle-patricia-trie/Value";
+import Hash "mo:merkle-patricia-trie/Hash";
+import Proof "mo:merkle-patricia-trie/Proof";
+import TrieMap "mo:base/TrieMap";
+import Debug "mo:base/Debug";
+
+// Create an empty trie and add a key/value pair
+var trie = Trie.init();
+let db = TrieMap.TrieMap<Hash.Hash, Trie.Node>(Hash.equal, Hash.hash);
+
+switch (Trie.put(trie, Key.fromText("one"), Value.fromText("value1"), db)) {
+  case (#ok newTrie) { trie := newTrie };
+  case (#err hash) { Debug.trap("missing hash: " # Hash.toHex(hash)) };
+};
+
+// Get value
+let value = Trie.get(trie, Key.fromText("one"), db);
+assert value == #ok(?Value.fromText("value1"));
+
+// Get the root hash of the trie
+let hash = Trie.hash(trie);
+
+// Create a proof
+let proof = switch (Proof.createWithDB(trie, Key.fromText("one"), db)) {
+  case (#ok(proof)) { proof };
+  case (#err(hash)) { Debug.trap("missing hash: " # Hash.toHex(hash)) };
+};
+
+// Verify the proof against the root hash
+let proofResult = Proof.verify(hash, Key.fromText("one"), proof);
+
+// Print proof result
+switch (proofResult) {
+  case (#included value) {
+    Debug.print("Proof was valid and returned value " # Value.toHex(value));
+  };
+  case (#excluded) {
+    Debug.print("Proof was valid and key is not included in trie");
+  };
+  case (#invalidProof) {
+    Debug.print("Proof was invalid. Can not make statement about the key");
+  };
+};
+
+```
+
+**Usage of `Trie` and `TrieWithDb` should not be mixed and can cause a trap!**
 
 ## Performance
 

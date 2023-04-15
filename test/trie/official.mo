@@ -2,6 +2,8 @@ import Trietest "../fixtures/trietest";
 import { chapter; section; test } "../Test";
 import Text "mo:base/Text";
 import Trie "../../src/Trie";
+import TrieDB "../../src/TrieWithDB";
+import TrieInternal "../../src/internal/Trie";
 import Hex "../../src/util/Hex";
 import { unwrapOpt; unwrap } "../../src/util";
 import Value "../../src/Value";
@@ -29,7 +31,7 @@ module {
 
                 var trie = Trie.init();
                 var trieWithDB = Trie.init();
-                var db = TrieMap.TrieMap<Hash, Trie.Node>(Hash.equal, Hash.hash);
+                var db = TrieMap.TrieMap<Hash, TrieInternal.Node>(Hash.equal, Hash.hash);
 
                 let inputs = testData.input;
                 let expect = testData.root;
@@ -41,18 +43,18 @@ module {
                             let bin : Value = unwrapOpt(Value.fromHexOrText(val));
                             //Debug.print("put " # Key.toText(key) # ": " # Value.toHex(bin));
                             trie := Trie.put(trie, key, bin);
-                            trieWithDB := unwrap(Trie.putWithDB(trieWithDB, key, bin, db));
+                            trieWithDB := unwrap(TrieDB.put(trieWithDB, key, bin, db));
                         };
                         case (null) {
                             //Debug.print("delete " # Key.toText(key));
                             trie := Trie.delete(trie, key);
-                            trieWithDB := unwrap(Trie.deleteWithDB(trieWithDB, key, db));
+                            trieWithDB := unwrap(TrieDB.delete(trieWithDB, key, db));
                         };
                     };
                     //Debug.print("---------------------");
                     //Debug.print(Trie.nodeToText(trie));
                     //Debug.print(Trie.nodeToTextWithDB(trieWithDB, db));
-                    assert Trie.nodeToText(trie) == Trie.nodeToTextWithDB(trieWithDB, db);
+                    assert Trie.toText(trie) == TrieDB.toText(trieWithDB, db);
                 };
 
                 //Debug.print("---------------------");
@@ -80,7 +82,7 @@ module {
 
                 var trie = Trie.init();
                 var trieWithDB = Trie.init();
-                var db = TrieMap.TrieMap<Hash, Trie.Node>(Hash.equal, Hash.hash);
+                var db = TrieMap.TrieMap<Hash, TrieDB.Node>(Hash.equal, Hash.hash);
 
                 let inputs = testData.input;
                 let expect = testData.root;
@@ -92,15 +94,15 @@ module {
                             let bin : Value = unwrapOpt(Value.fromHexOrText(val));
                             //Debug.print("put " # Key.toText(key) # ": " # Value.toHex(bin));
                             trie := Trie.put(trie, key, bin);
-                            trieWithDB := unwrap(Trie.putWithDB(trieWithDB, key, bin, db));
+                            trieWithDB := unwrap(TrieDB.put(trieWithDB, key, bin, db));
                         };
                         case (null) {
                             //Debug.print("delete " # Key.toText(key));
                             trie := Trie.delete(trie, key);
-                            trieWithDB := unwrap(Trie.deleteWithDB(trieWithDB, key, db));
+                            trieWithDB := unwrap(TrieDB.delete(trieWithDB, key, db));
                         };
                     };
-                    assert Trie.nodeToText(trie) == Trie.nodeToTextWithDB(trieWithDB, db);
+                    assert Trie.toText(trie) == TrieDB.toText(trieWithDB, db);
                 };
 
                 assert Trie.hashHex(trie) == expect;

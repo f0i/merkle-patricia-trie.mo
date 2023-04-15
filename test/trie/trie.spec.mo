@@ -2,7 +2,7 @@ import { chapter; section; test } = "../Test";
 
 import Option "mo:base/Option";
 
-import Trie "../../src/Trie";
+import Trie "../../src/internal/Trie";
 import Key "../../src/Key";
 import Debug "mo:base/Debug";
 import Nibble "../../src/util/Nibble";
