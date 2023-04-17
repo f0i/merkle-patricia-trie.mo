@@ -23,7 +23,7 @@ assert value == #ok(?Value.fromText("value1"));
 let hash = Trie.hash(trie);
 
 // Create a proof
-let proof = switch (Proof.createWithDB(trie, Key.fromText("one"), db)) {
+let proof = switch (Trie.createProof(trie, Key.fromText("one"), db)) {
   case (#ok(proof)) { proof };
   case (#err(hash)) { Debug.trap("missing hash: " # Hash.toHex(hash)) };
 };

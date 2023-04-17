@@ -17,7 +17,7 @@ assert value == ?Value.fromText("value1");
 let hash = Trie.hash(trie);
 
 // Create a proof
-let proof = Proof.create(trie, Key.fromText("one"));
+let proof = Trie.createProof(trie, Key.fromText("one"));
 
 // Verify the proof against the root hash
 let proofResult = Proof.verify(hash, Key.fromText("one"), proof);

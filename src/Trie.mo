@@ -1,8 +1,9 @@
-import Trie "internal/Trie";
+import Trie "internal/TrieInternal";
 import Value "Value";
 import Key "Key";
 import Iter "mo:base/Iter";
 import Hash "Hash";
+import Proof "Proof";
 /// Proxy module exposing some function of internal/Trie.mo
 
 module {
@@ -45,4 +46,10 @@ module {
 
     /// Get the whole trie as a human readable Text
     public func toText(trie : Trie) : Text = Trie.nodeToText(trie);
+
+    /// Create a proof
+    /// see Proof module for proof verification
+    public func createProof(trie : Trie, key : Key) : Proof.Proof {
+        Proof.createWithoutDB(trie, key);
+    };
 };

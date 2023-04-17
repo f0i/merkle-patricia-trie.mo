@@ -74,7 +74,7 @@ assert value == ?Value.fromText("value1");
 let hash = Trie.hash(trie);
 
 // Create a proof
-let proof = Proof.create(trie, Key.fromText("one"));
+let proof = Trie.createProof(trie, Key.fromText("one"));
 
 // Verify the proof against the root hash
 let proofResult = Proof.verify(hash, Key.fromText("one"), proof);
@@ -134,7 +134,7 @@ assert value == #ok(?Value.fromText("value1"));
 let hash = Trie.hash(trie);
 
 // Create a proof
-let proof = switch (Proof.createWithDB(trie, Key.fromText("one"), db)) {
+let proof = switch (Trie.createProof(trie, Key.fromText("one"), db)) {
   case (#ok(proof)) { proof };
   case (#err(hash)) { Debug.trap("missing hash: " # Hash.toHex(hash)) };
 };
@@ -181,3 +181,4 @@ All test cases can be executed using the `test.sh` script.
 - Specification on [ethereum.org](https://ethereum.org/en/developers/docs/data-structures-and-encoding/patricia-merkle-trie/)
 - TypeScript implementation in [github.com/ethereumjs/.../trie](https://github.com/ethereumjs/ethereumjs-monorepo/tree/master/packages/trie)
 - Medium post with  [Ethereum Merkle Patricia Trie Explained](https://medium.com/@chiqing/merkle-patricia-trie-explained-ae3ac6a7e123)
+- (RLP debugger)[)https://codechain-io.github.io/rlp-debugger/]

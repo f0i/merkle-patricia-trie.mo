@@ -5,7 +5,7 @@ import TrieMap "mo:base/TrieMap";
 import Hash "Hash";
 import Hex "util/Hex";
 import Key "Key";
-import Trie "internal/Trie";
+import Trie "internal/TrieInternal";
 import Value "Value";
 import Result "mo:base/Result";
 
@@ -32,7 +32,7 @@ module {
 
     /// Create a proof
     /// `trie` must be a full trie (no #hash node in the path of `key`)
-    public func create(trie : Trie, key : Key) : Proof {
+    public func createWithoutDB(trie : Trie, key : Key) : Proof {
         let path : Path = Trie.findPath(trie, key, null);
         let stackSize = List.size(path.stack);
         var size = stackSize + 1;

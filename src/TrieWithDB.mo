@@ -1,9 +1,10 @@
-import Trie "internal/Trie";
+import Trie "internal/TrieInternal";
 import Value "Value";
 import Key "Key";
 import Iter "mo:base/Iter";
 import Hash "Hash";
 import Result "mo:base/Result";
+import Proof "Proof";
 /// Proxy module exposing some function of internal/Trie.mo
 
 module {
@@ -12,6 +13,7 @@ module {
     type Key = Key.Key;
     type Value = Value.Value;
     type Hash = Hash.Hash;
+    type Proof = Proof.Proof;
 
     /// Data structure and functions to manipulate and query a Merkle Patricia Trie.
     public type Trie = Trie.Trie;
@@ -55,4 +57,10 @@ module {
 
     /// Get the whole trie as a human readable Text
     public func toText(trie : Trie, db : DB) : Text = Trie.nodeToTextWithDB(trie, db);
+
+    /// Create a proof
+    /// see Proof module for proof verification
+    public func createProof(trie : Trie, key : Key, db : DB) : Result<Proof, Hash> {
+        Proof.createWithDB(trie, key, db);
+    };
 };

@@ -3,7 +3,7 @@ import { chapter; section; test } "../Test";
 import Text "mo:base/Text";
 import Trie "../../src/Trie";
 import TrieDB "../../src/TrieWithDB";
-import TrieInternal "../../src/internal/Trie";
+import TrieInternal "../../src/internal/TrieInternal";
 import Hex "../../src/util/Hex";
 import { unwrapOpt; unwrap } "../../src/util";
 import Value "../../src/Value";
